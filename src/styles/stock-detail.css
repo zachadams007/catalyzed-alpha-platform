@@ -1,0 +1,232 @@
+/* ============================================================================
+   Stock Detail (/signal/:ticker) - the most-visited deep link in the app.
+
+   A small, scoped section system layered on the shared `.signal-card` chassis:
+   a larger hero numeral scale, a 2-up fundamentals grid, calmer social meta,
+   and a staggered section reveal so the page assembles itself on entry.
+
+   Rules of the house (docs/design-system.md):
+   • Never restyle the bare `.signal-card` - only the `--detail` modifier and
+     `.sd-*` section classes below.
+   • Token-only: spacing from `--sp-*`, type from `--type-*`, motion from the
+     shared `--motion-*` / `--ease-*` tokens. No raw hex, no magic px.
+   • Every motion has a `prefers-reduced-motion` fallback.
+   ========================================================================== */
+
+/* ---- Block rhythm --------------------------------------------------------- */
+/* The two stacked hero cards above the detail grid (the grid itself uses gap). */
+.sd-block {
+  margin-bottom: var(--sp-5);
+}
+
+/* ---- Hero ----------------------------------------------------------------- */
+/* Bump the shared ticker / price / company scale ONLY inside the detail card. */
+.signal-card--detail .ticker {
+  font-size: var(--type-headline); /* 24px - was an inline 30 */
+}
+.signal-card--detail .company {
+  font-size: var(--type-body);
+  margin-top: 3px;
+}
+.signal-card--detail .price {
+  font-size: var(--type-title);
+}
+
+.sd-hero__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.signal-card--detail .signal-card__top {
+  align-items: flex-start;
+}
+
+.signal-card--detail .signal-card__badges {
+  margin-top: var(--sp-3);
+}
+
+.signal-card--detail .price-row .sd-hero__cap {
+  font-size: var(--type-sm);
+}
+.sd-hero__unavailable {
+  margin-top: var(--sp-2);
+  font-size: var(--type-sm);
+  max-width: 56ch;
+  line-height: 1.45;
+}
+
+/* The score column to the right of the hero. */
+.signal-card--detail .score-stack {
+  align-items: center;
+  gap: var(--sp-2);
+}
+.sd-score__label {
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* ---- Company blurb - one-sentence descriptor above the thesis ------------- */
+.sd-company-blurb {
+  max-width: 68ch;
+  font-size: var(--type-body);
+  color: var(--text);
+  margin: var(--sp-2) 0 0;
+  line-height: 1.55;
+}
+
+/* ---- Fundamentals (narrow side column → 2-up) ----------------------------- */
+.kfs.sd-fundamentals {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* ---- Social / political --------------------------------------------------- */
+.sd-social__summary {
+  font-size: var(--type-body);
+  margin-bottom: var(--sp-3);
+}
+.sd-social__meta {
+  font-size: var(--type-sm);
+  margin-bottom: var(--sp-2);
+}
+.sd-social__post-time {
+  margin-left: auto;
+  font-size: var(--type-xs);
+}
+.sd-social__banner {
+  margin-top: var(--sp-3);
+}
+
+/* ---- Sources -------------------------------------------------------------- */
+.sd-sources__note {
+  font-size: var(--type-xs);
+  margin-top: var(--sp-1);
+}
+
+/* ---- Price chart modal - timeframe selector -------------------------------- */
+.price-chart-modal__timeframes {
+  display: flex;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+.price-chart-modal__tf-btn {
+  flex: 1;
+  padding: 5px 0;
+  font-size: var(--type-sm);
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+
+.price-chart-modal__tf-btn:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.price-chart-modal__tf-btn--active {
+  color: var(--accent);
+  background: var(--accent-subtle, color-mix(in srgb, var(--accent) 12%, transparent));
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* Loading skeleton bar inside the chart box */
+.price-chart-modal__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 248px;
+  padding: 12px 8px 4px;
+}
+
+.price-chart-modal__loading-bar {
+  width: 80%;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--border) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: chartLoadSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes chartLoadSweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .price-chart-modal__loading-bar {
+    animation: none;
+    background: var(--border);
+  }
+}
+
+/* Empty state inside the chart box */
+.price-chart-modal__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 248px;
+}
+
+/* ---- Staggered section reveal --------------------------------------------- */
+/* Each major block rises in once, in DOM order, driven by `--reveal-index`.
+   Pure CSS (no scroll observer) - the detail page is short enough that a brief
+   entrance cascade reads as "assembling", matching the Portfolio `.pf-reveal`. */
+@media (prefers-reduced-motion: no-preference) {
+  .sd-reveal {
+    opacity: 0;
+    animation: sdRise 0.5s var(--ease-out) forwards;
+    animation-delay: calc(var(--reveal-index, 0) * 90ms);
+  }
+}
+@keyframes sdRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sd-reveal {
+    opacity: 1;
+  }
+}
+
+/* ---- Command-bar deep-link flash ------------------------------------------- */
+/* Mirrors `.tw-panel--flash` (terminal.css) for the consolidated stock page:
+   briefly highlights the section a `?panel=` command-bar action scrolled to,
+   so the jump is legible even when the target was already on/near-screen. */
+.sd-panel--flash {
+  animation: sdPanelFlash 1.6s ease;
+}
+@keyframes sdPanelFlash {
+  0%,
+  100% {
+    box-shadow: var(--shadow-sm);
+  }
+  20% {
+    box-shadow: 0 0 0 2px var(--accent), var(--glow-accent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sd-panel--flash {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+}

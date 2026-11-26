@@ -1,0 +1,322 @@
+/* RankPerformanceChart - portable "does the ranking work?" proof ladder.
+   Token-only: graphite glass, azure rank rail, bull/bear ONLY for realized
+   returns. Diverging bars step down from the top-scored tier. */
+
+.rankperf {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: var(--sp-5);
+}
+
+/* ── Header: heading + the top-vs-bottom lift pill ────────────────────────── */
+.rankperf__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+.rankperf__heading {
+  display: flex;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+.rankperf__icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--accent-bright);
+}
+.rankperf__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--type-title);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--text);
+}
+.rankperf__sub {
+  margin: var(--sp-1) 0 0;
+  font-size: var(--type-sm);
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 58ch;
+}
+.rankperf__lift {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  white-space: nowrap;
+}
+.rankperf__lift-icon {
+  display: inline-flex;
+  color: var(--muted);
+}
+.rankperf__lift-k {
+  font-size: var(--type-xs);
+  color: var(--faint);
+  letter-spacing: 0.02em;
+}
+.rankperf__lift-v {
+  font-size: var(--type-body);
+  font-weight: 700;
+}
+.rankperf__lift--pos {
+  border-color: rgba(var(--bull-rgb), 0.4);
+  background: rgba(var(--bull-rgb), 0.08);
+}
+.rankperf__lift--pos .rankperf__lift-icon {
+  color: var(--bull);
+}
+.rankperf__lift--neg {
+  border-color: rgba(var(--bear-rgb), 0.36);
+  background: rgba(var(--bear-rgb), 0.07);
+}
+
+/* ── Rows: tier label · diverging bar · return + facts ────────────────────── */
+.rankperf__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.rankperf__row {
+  display: grid;
+  grid-template-columns: minmax(104px, 150px) minmax(120px, 1fr) minmax(78px, auto);
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+}
+.rankperf__row + .rankperf__row:not(.rankperf__row--axis) {
+  border-top: 1px solid var(--border);
+}
+
+/* Tier block: a rank rail dot + percentile name + score range. */
+.rankperf__tier {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  min-width: 0;
+}
+.rankperf__rank {
+  grid-row: span 2;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0);
+}
+/* The top tier wears the brand; tiers fade toward the bottom - a ranked rail. */
+.rankperf__row--top .rankperf__rank {
+  background: var(--accent-bright);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.16);
+}
+.rankperf__row--bottom .rankperf__rank {
+  background: var(--faint);
+}
+.rankperf__tier-name {
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rankperf__tier-detail {
+  grid-column: 2;
+  font-size: var(--type-xs);
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+/* The diverging plot - center zero baseline, bar grows right (gain) / left (loss). */
+.rankperf__track {
+  position: relative;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.rankperf__zero {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--border-strong);
+}
+.rankperf__bar {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  /* --mag is 0..100 (% of the half-track); cap each side at 50% of the plot. */
+  width: calc(var(--mag, 0) * 0.5%);
+  border-radius: var(--r-xs);
+}
+.rankperf__bar--pos {
+  left: 50%;
+  background: linear-gradient(90deg, rgba(var(--bull-rgb), 0.45), rgba(var(--bull-rgb), 0.95));
+  box-shadow: 0 0 14px rgba(var(--bull-rgb), 0.22);
+  border-radius: 0 var(--r-xs) var(--r-xs) 0;
+  transform-origin: left center;
+}
+.rankperf__bar--neg {
+  right: 50%;
+  background: linear-gradient(270deg, rgba(var(--bear-rgb), 0.45), rgba(var(--bear-rgb), 0.95));
+  box-shadow: 0 0 14px rgba(var(--bear-rgb), 0.22);
+  border-radius: var(--r-xs) 0 0 var(--r-xs);
+  transform-origin: right center;
+}
+.rankperf__bar--flat {
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--border-strong);
+}
+.rankperf__bar--anim {
+  transform: scaleX(0);
+  animation: rankBarGrow var(--motion-slow) var(--ease-out) forwards;
+  animation-delay: calc(var(--reveal-index, 0) * var(--motion-stagger));
+}
+@keyframes rankBarGrow {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Return value + compact fact tags. */
+.rankperf__out {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+.rankperf__ret {
+  font-size: var(--type-body);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.rankperf__facts {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--type-xs);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.rankperf__fact--n::before {
+  content: "·";
+  margin-right: var(--sp-2);
+  color: var(--border-strong);
+}
+.rankperf__fact--n::after {
+  content: " picks";
+}
+
+/* Thin sample → soften the returns so the ladder never over-claims. */
+.rankperf--thin .rankperf__ret {
+  opacity: 0.82;
+}
+.rankperf--thin .rankperf__bar {
+  opacity: 0.86;
+}
+
+/* ── Axis row, aligned under the bar column ───────────────────────────────── */
+.rankperf__row--axis {
+  padding-top: var(--sp-2);
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+.rankperf__axis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--type-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.rankperf__axis-zero {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.rankperf__note {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--type-xs);
+  color: var(--faint);
+  line-height: 1.5;
+}
+
+/* ── Dense embed (watchlist / group / portfolio panels) ───────────────────── */
+.rankperf--dense {
+  padding: var(--sp-4);
+}
+.rankperf--dense .rankperf__icon {
+  width: 26px;
+  height: 26px;
+}
+.rankperf--dense .rankperf__title {
+  font-size: var(--type-body);
+}
+.rankperf--dense .rankperf__head {
+  margin-bottom: var(--sp-3);
+}
+.rankperf--dense .rankperf__row {
+  grid-template-columns: minmax(86px, 120px) minmax(90px, 1fr) minmax(60px, auto);
+  gap: var(--sp-2);
+  padding: 6px 0;
+}
+.rankperf--dense .rankperf__track {
+  height: 22px;
+}
+.rankperf--dense .rankperf__tier-detail {
+  display: none;
+}
+.rankperf--dense .rankperf__fact:not(.rankperf__fact--n) {
+  display: none;
+}
+.rankperf--dense .rankperf__fact--n::before {
+  display: none;
+}
+
+/* ── Reduced motion: bars settle instantly, still fully visible ───────────── */
+@media (prefers-reduced-motion: reduce) {
+  .rankperf__bar--anim {
+    transform: none;
+    animation: none;
+  }
+}
+
+/* ── Responsive: keep the ladder readable on a narrow workbench ───────────── */
+@media (max-width: 600px) {
+  .rankperf__row {
+    grid-template-columns: minmax(78px, 1fr) minmax(96px, 1.4fr) minmax(64px, auto);
+    gap: var(--sp-2);
+  }
+  .rankperf__tier-detail {
+    display: none;
+  }
+  .rankperf__facts {
+    display: none;
+  }
+}

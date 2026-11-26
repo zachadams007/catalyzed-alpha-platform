@@ -1,0 +1,14 @@
+# Web deploy = the Vite app only. Exclude the native/desktop + heavy artifacts
+# so `vercel --prod` doesn't sweep up multi-GB Rust build output.
+src-tauri/
+scripts/_symdata/
+*.msi
+*.exe
+*.log
+.shots/
+
+# Local desktop/dev secrets must never enter a hosted web build. The public
+# Vite bundle uses Vercel/Supabase proxy env instead.
+.env
+.env.*
+.vercel/.env*

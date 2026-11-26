@@ -1,0 +1,83 @@
+/* Performance cold-start extras - ghost stat row + skeleton CTA (token-only). */
+
+.cs-ghost-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  opacity: 0.9;
+}
+
+.cs-ghost-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.cs-ghost-stat__value {
+  font-size: var(--type-title);
+  font-weight: 720;
+  color: var(--faint);
+  letter-spacing: -0.02em;
+}
+
+.cs-ghost-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: auto;
+  padding-top: var(--sp-3);
+}
+
+.cs-ghost-chip {
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: rgba(var(--accent-rgb), 0.06);
+  color: var(--faint);
+  font-size: var(--type-xs);
+  font-weight: 600;
+}
+
+.cs-cta__btn {
+  min-width: 168px;
+}
+
+.cs-cta__skel {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.cs-cta__skel .skeleton {
+  opacity: 0.75;
+}
+
+.cs-cta__label {
+  font-weight: 600;
+}
+
+.cs-cta__hint {
+  font-size: var(--type-sm);
+  text-align: center;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .cs-ghost-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cs-cta__skel .skeleton {
+    animation: none;
+  }
+}

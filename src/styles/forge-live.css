@@ -1,0 +1,2255 @@
+/* ==========================================================================
+   Blueprint live instrument - the Gate Deck console, leaderboard, cut strip,
+   and per-name inspector. The board re-ranks on every input change; the
+   console aggregates the SAME engine gate results the rows carry, so cause
+   (gate kills) and effect (rows traveling / sinking) can never disagree.
+   ========================================================================== */
+
+.lb-live-tag {
+  /* Spacing from the eyebrow is owned by the flex `gap` on .forge-results__head
+     .section-title - no margin here, so the pill can't drift onto the title. */
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* Preliminary board: the AI lane is mid-flight, results not final yet. */
+.lb-live-tag--busy {
+  color: var(--accent-3);
+  border-color: rgba(var(--accent-3-rgb), 0.45);
+  animation: deckLamp 1.6s ease-in-out infinite;
+}
+
+/* ---- Ranking-mode selector ---- */
+
+.rank-mode {
+  margin-bottom: 12px;
+}
+
+.rank-mode__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rank-mode__pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 6px 13px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out);
+}
+
+.rank-mode__pill:hover {
+  color: var(--text);
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+
+.rank-mode__pill--on {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.65);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.rank-mode__meaning {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 720px;
+}
+
+.rank-mode__flow {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 0;
+  align-items: center;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.rank-mode__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+}
+
+.rank-mode__step + .rank-mode__step {
+  margin-left: 18px;
+  position: relative;
+}
+
+.rank-mode__step + .rank-mode__step::before {
+  content: "→";
+  position: absolute;
+  left: -15px;
+  color: var(--accent);
+}
+
+.rank-mode__step-num {
+  font-size: 9.5px;
+  color: var(--accent);
+  border: 1px solid rgba(var(--accent-rgb), 0.5);
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  display: inline-grid;
+  place-items: center;
+}
+
+/* ==========================================================================
+   Gate Deck - the screen console. UNIVERSE → gate chips (−kills) → FULL PASS,
+   with an on-board readout and a ranked-fit spectrum analyzer.
+   ========================================================================== */
+
+.gate-deck {
+  position: relative;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  background:
+    linear-gradient(180deg, rgba(var(--accent-2-rgb), 0.08), transparent 42%),
+    rgba(5, 9, 14, 0.88);
+  margin-bottom: var(--sp-4);
+  /* No overflow:hidden - the teaching tooltips must escape the console. */
+}
+
+.gate-deck__bar .tip,
+.gate-deck__rail > .tip,
+.gate-deck__readout .tip {
+  display: inline-flex;
+}
+
+.gate-deck__rail > .tip > .gate-deck__node {
+  cursor: help;
+}
+
+/* Edge-safe bubbles: the outputs column is a scroller (overflow-y:auto), so
+   centered bubbles on edge-hugging triggers would clip at its sides. Left-edge
+   triggers grow their bubble rightward; right-edge triggers grow leftward. */
+.gate-deck__readout .tip .tip__bubble,
+.gate-deck__stats .tip .tip__bubble,
+.gate-deck__rail > .tip:first-of-type .tip__bubble {
+  left: 0;
+  transform: translate(0, -4px);
+}
+
+.gate-deck__readout .tip .tip__bubble[data-open="true"],
+.gate-deck__stats .tip .tip__bubble[data-open="true"],
+.gate-deck__rail > .tip:first-of-type .tip__bubble[data-open="true"] {
+  transform: translate(0, 0);
+}
+
+.gate-deck__readout .tip .tip__bubble::after,
+.gate-deck__stats .tip .tip__bubble::after,
+.gate-deck__rail > .tip:first-of-type .tip__bubble::after {
+  left: 22px;
+}
+
+.gate-deck__rail > .tip:last-of-type .tip__bubble,
+.gate-deck__spectrum > .tip .tip__bubble {
+  left: auto;
+  right: 0;
+  transform: translate(0, -4px);
+}
+
+.gate-deck__spectrum > .tip .tip__bubble--top {
+  transform: translate(0, 4px);
+}
+
+.gate-deck__rail > .tip:last-of-type .tip__bubble[data-open="true"],
+.gate-deck__spectrum > .tip .tip__bubble[data-open="true"] {
+  transform: translate(0, 0);
+}
+
+.gate-deck__rail > .tip:last-of-type .tip__bubble::after,
+.gate-deck__spectrum > .tip .tip__bubble::after {
+  left: auto;
+  right: 22px;
+  margin-left: 0;
+}
+
+.gate-deck__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gate-deck__lamp {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.9);
+  animation: deckLamp 2.6s ease-in-out infinite;
+}
+
+.gate-deck__lamp.is-busy {
+  background: var(--accent-3);
+  box-shadow: 0 0 8px rgba(var(--accent-3-rgb), 0.9);
+  animation-duration: 0.9s;
+}
+
+.gate-deck__lamp.is-error {
+  background: var(--bear);
+  box-shadow: 0 0 8px rgba(var(--bear-rgb), 0.9);
+  animation: none;
+}
+
+/* Paused is an expected daily state (proxy budget spent) - calm gold, no pulse. */
+.gate-deck__lamp.is-paused {
+  background: var(--accent-3);
+  box-shadow: 0 0 8px rgba(var(--accent-3-rgb), 0.7);
+  animation: none;
+}
+
+@keyframes deckLamp {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.gate-deck__title {
+  font-family: var(--font-display);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gate-deck__status {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+
+.gate-deck__status.is-live {
+  color: var(--accent);
+}
+
+.gate-deck__status.is-busy {
+  color: var(--accent-3);
+}
+
+.gate-deck__status.is-error {
+  color: var(--bear);
+}
+
+.gate-deck__status.is-paused {
+  color: var(--accent-3);
+}
+
+.gate-deck__provenance {
+  margin-left: auto;
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+
+.gate-deck__body {
+  display: grid;
+  grid-template-columns: minmax(170px, 230px) 1fr;
+  gap: var(--sp-5);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  align-items: stretch;
+}
+
+/* -- readout -- */
+
+.gate-deck__readout {
+  display: flex;
+  flex-direction: column;
+}
+
+.gate-deck__readout-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: help;
+}
+
+.gate-deck__big {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--text);
+  text-shadow: 0 0 26px rgba(var(--accent-rgb), 0.4);
+}
+
+.gate-deck__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  margin: 10px 0 0;
+}
+
+.gate-deck__stats > .tip {
+  display: flex;
+  min-width: 0;
+}
+
+.gate-deck__stat {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  cursor: help;
+}
+
+.gate-deck__stat-k {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.gate-deck__stat-v {
+  margin: 0;
+  font-size: var(--type-sm);
+  color: var(--text);
+}
+
+.gate-deck__stat-v--pass {
+  color: var(--accent);
+}
+
+.gate-deck__stat-v--demoted {
+  color: var(--muted);
+}
+
+/* -- gate rail: the full-width signal chain band -- */
+
+.gate-deck__rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+/* The signal wire the counts travel along. */
+.gate-deck__rail::before {
+  content: "";
+  position: absolute;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.08),
+    rgba(var(--accent-rgb), 0.38) 16%,
+    rgba(var(--accent-rgb), 0.38) 84%,
+    rgba(var(--accent-bright-rgb), 0.5)
+  );
+}
+
+.gate-deck__node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: rgba(8, 14, 21, 0.94);
+  min-width: 76px;
+}
+
+.gate-deck__node em {
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.gate-deck__node > span {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.gate-deck__node--pass {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.12);
+}
+
+.gate-deck__node--pass > span {
+  color: var(--accent);
+}
+
+.gate-deck__chain {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+  min-height: 44px;
+}
+
+.gate-deck__nogates {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 5px 12px;
+  background: rgba(8, 14, 21, 0.9);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-pill);
+}
+
+.gate-deck__gate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 6px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: rgba(10, 16, 24, 0.94);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.gate-deck__gate em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.gate-deck__kills {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+
+/* Calm chrome: the chip stays neutral, only the kill count carries the red. */
+.gate-deck__gate.is-cutting .gate-deck__kills {
+  color: var(--bear);
+}
+
+.gate-deck__gate:hover {
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+.gate-deck__gate.is-open {
+  border-color: rgba(var(--accent-rgb), 0.8);
+  box-shadow: var(--glow-accent);
+}
+
+/* -- fit spectrum -- */
+
+.gate-deck__spectrum {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.gate-deck__spec-bars {
+  position: relative;
+  flex: 1;
+  min-height: 68px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background:
+    repeating-linear-gradient(0deg, rgba(var(--accent-rgb), 0.05) 0 1px, transparent 1px 16px),
+    rgba(5, 10, 16, 0.85);
+  overflow: hidden;
+}
+
+.gate-deck__spec-bar {
+  flex: 1;
+  min-width: 1px;
+  height: var(--h, 4%);
+  border-radius: 1px;
+  background: linear-gradient(180deg, var(--accent-bright), var(--accent) 55%, var(--accent-2));
+  transition:
+    height var(--motion-slow) var(--ease-out),
+    opacity var(--motion-slow) var(--ease-out);
+}
+
+.gate-deck__spec-bar.is-weak {
+  background: linear-gradient(
+    180deg,
+    rgba(var(--accent-rgb), 0.45),
+    rgba(var(--accent-2-rgb), 0.3)
+  );
+  opacity: 0.5;
+}
+
+.gate-deck__spec-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.gate-deck__spectrum > .tip {
+  align-self: flex-end;
+}
+
+.gate-deck__spec-caption {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: right;
+  cursor: help;
+}
+
+/* -- gate detail (who a gate demotes) -- */
+
+.gate-deck__detail {
+  padding: 0 var(--sp-4) var(--sp-3);
+}
+
+.gate-deck__detail-head {
+  font-size: var(--type-sm);
+  color: var(--muted);
+}
+
+.gate-deck__detail-head strong {
+  color: var(--text);
+}
+
+.gate-deck__victims {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.gate-deck__victim {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 4px 10px;
+  border: 1px solid rgba(var(--bear-rgb), 0.35);
+  background: rgba(var(--bear-rgb), 0.07);
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+.gate-deck__victim em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.gate-deck__victim--more {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--faint);
+}
+
+/* -- console log: cut feed + AI-lane fault -- */
+
+.gate-deck__log {
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--border);
+}
+
+/* Calm narration row - paused / merged / snag. Never a red alert: the proxy
+   budget running out is an expected condition, not a fault. */
+.gate-deck__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 8px;
+  font-size: var(--type-sm);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.gate-deck__note-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 5px;
+  background: var(--accent);
+}
+
+.gate-deck__note--paused .gate-deck__note-dot {
+  background: var(--accent-3);
+  box-shadow: 0 0 8px rgba(var(--accent-3-rgb), 0.55);
+}
+
+.gate-deck__note--warn .gate-deck__note-dot {
+  background: var(--warn);
+}
+
+.gate-deck__note--done .gate-deck__note-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.55);
+}
+
+.gate-deck__log .cut-strip {
+  margin: 0;
+}
+
+/* ---- Cut strip ---- */
+
+.cut-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 0;
+}
+
+.cut-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(var(--bear-rgb), 0.45);
+  background: rgba(var(--bear-rgb), 0.08);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.cut-chip__x {
+  color: var(--bear);
+  font-weight: 700;
+}
+
+.cut-chip__ticker {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.cut-chip__gate em {
+  color: var(--faint);
+  font-style: normal;
+}
+
+/* ---- Leaderboard ---- */
+
+.lb-board {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.lb-row {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+  /* Stable collapsed height so live re-ranks travel rows vertically without
+     content-driven height jumps (long sector names, gate tags, the AI badge) -
+     the "leaderboard glitches as you type" jank. */
+  min-height: 58px;
+  transition:
+    border-color var(--motion-base) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+
+.lb-row--open,
+.lb-row:hover {
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+.lb-row--weak {
+  opacity: 0.78;
+}
+
+.lb-row--weak:hover,
+.lb-row--weak.lb-row--open {
+  opacity: 1;
+}
+
+.lb-row__main {
+  display: grid;
+  /* 8 STABLE columns - rank · delta · ticker · name · sector · signal · fit · chev.
+     The AI badge rides inside the name cell and the signal cell always renders, so
+     no optional child can shift the grid (which used to collapse the fit cell).
+     Every track is fixed or fr-based - the sector column is a FIXED width (not
+     content `auto`) so a long sector name on one row can't push that row's
+     signal / fit / chev columns rightward out of line with its neighbours. */
+  grid-template-columns:
+    28px 40px 70px minmax(96px, 1.1fr) 116px minmax(0, 1.5fr) 92px 22px;
+  align-items: center;
+  /* Tracks + gap were tightened 2026-09-17 (was 44 / 110 / 132 / 104 and gap
+     13px = a 633px floor). The desktop app opens at 1440px, where this column
+     is ~602px wide - so the full 8-column board never fit at the default
+     window and silently clipped. New floor: 464px tracks + 70px gaps + 32px
+     padding = 566px, leaving ~20px of slack at 1440 with the scrollbar. The
+     6-column collapse below still catches anything narrower. */
+  gap: 10px;
+  width: 100%;
+  /* Safety net: if the row is ever narrower than its column floor for any
+     reason the container query above didn't catch, scroll instead of silently
+     clipping the fit score + chevron (the original defect). */
+  overflow-x: auto;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.lb-row__rank {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.lb-row__delta {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.lb-row__delta.is-up {
+  color: var(--bull);
+}
+
+.lb-row__delta.is-down {
+  color: var(--bear);
+}
+
+.lb-row__delta.is-new {
+  color: var(--accent-3);
+  border: 1px solid rgba(var(--accent-3-rgb), 0.45);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.lb-row__ticker {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.lb-row__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.lb-row__name-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stable signal slot (gates / reason / empty) - keeps the grid column count
+   constant so the fit cell can never collapse. */
+.lb-row__signal {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lb-row__ai {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-3);
+  border: 1px solid rgba(var(--accent-3-rgb), 0.45);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.lb-row__sector {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.lb-row__sector-name {
+  font-size: 11.5px;
+  color: var(--faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Real market cap + tier under the sector - makes a cap demotion self-evident
+   (e.g. "$253B · Mega" can't match a Micro filter) instead of an unexplained chip. */
+.lb-row__cap {
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+.lb-row__cap--unknown {
+  color: var(--faint);
+  opacity: 0.72;
+}
+
+.lb-row__reason {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+/* Failed-gate tags on demoted rows - the row itself names its killers. */
+.lb-row__gates {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.lb-gate-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  border: 1px solid rgba(var(--bear-rgb), 0.35);
+  background: rgba(var(--bear-rgb), 0.06);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.lb-gate-tag i {
+  font-style: normal;
+  color: var(--bear);
+  font-size: 9px;
+}
+
+.lb-gate-tag--more {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--faint);
+}
+
+.lb-row__fit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.lb-row__fit-num {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--score-high);
+}
+
+.lb-row__fit-val {
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.lb-row__fit-num em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.lb-row__fit-track {
+  width: 64px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.12);
+  overflow: hidden;
+}
+
+.lb-row__fit-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--grad-brand);
+  transition: width var(--motion-slow) var(--ease-out);
+}
+
+.lb-row__chev {
+  color: var(--faint);
+  font-size: 16px;
+  text-align: center;
+}
+
+.lb-row__detail {
+  padding: 2px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.lb-row__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 0;
+}
+
+.lb-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Empty board - an active filter screened everything out (honest, with a path forward). */
+.lb-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 28px 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: var(--surface);
+  text-align: center;
+}
+
+.lb-empty__title {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.lb-empty__hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 46ch;
+  margin: 0 auto;
+}
+
+/* "Missed the cut" - names hard-removed by an active filter, collapsed by default. */
+.lb-missed {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.lb-missed__toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+
+.lb-missed__toggle:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.lb-missed__chev {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.lb-missed__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.lb-missed__count {
+  font-size: 11px;
+  color: var(--faint);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 1px 8px;
+}
+
+.lb-missed__hint {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.lb-missed__list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Windowing control for the full-universe board. */
+.lb-more {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 11px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--type-sm);
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+
+.lb-more:hover {
+  color: var(--text);
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+
+.lb-more em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+/* ---- Inspector ---- */
+
+.lb-inspector {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.4fr) minmax(220px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.lb-inspector__title {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+
+.lb-cat {
+  display: grid;
+  grid-template-columns: 138px 40px 1fr 30px;
+  align-items: center;
+  gap: 9px;
+  padding: 3px 0;
+}
+
+.lb-cat__label {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.lb-cat__weight {
+  font-size: 10.5px;
+  color: var(--accent);
+}
+
+.lb-cat__track {
+  display: block;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.1);
+  overflow: hidden;
+}
+
+.lb-cat__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent) 70%, var(--accent-bright));
+  transition: width var(--motion-slow) var(--ease-out);
+}
+
+.lb-cat__score {
+  font-size: 11px;
+  color: var(--text);
+  text-align: right;
+}
+
+.lb-inspector__axes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.lb-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.lb-meta__risk {
+  color: var(--bear);
+}
+
+.lb-meta__conf {
+  color: var(--accent-3);
+}
+
+/* Fit lanes - the per-mode ranking inputs; inactive lanes dim. */
+.lb-lane {
+  display: grid;
+  grid-template-columns: 112px 1fr 30px;
+  align-items: center;
+  gap: 9px;
+  padding: 3px 0;
+  opacity: 0.45;
+  transition: opacity var(--motion-base) var(--ease-out);
+}
+
+.lb-lane--on {
+  opacity: 1;
+}
+
+.lb-lane__label {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.lb-lane__track {
+  display: block;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.1);
+  overflow: hidden;
+}
+
+.lb-lane__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width var(--motion-slow) var(--ease-out);
+}
+
+.lb-lane__score {
+  font-size: 11px;
+  color: var(--text);
+  text-align: right;
+}
+
+.lb-inspector__gates {
+  margin-top: 14px;
+}
+
+.lb-gate-miss {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 0 0 5px;
+}
+
+.lb-gate-miss__x {
+  color: var(--bear);
+}
+
+.lb-gate-miss__label {
+  color: var(--text);
+}
+
+.lb-gate-miss em {
+  font-style: normal;
+  color: var(--faint);
+}
+
+.lb-inspector__why {
+  font-size: 11.5px;
+  color: var(--faint);
+  line-height: 1.55;
+  margin: 10px 0 0;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 1100px) {
+  .gate-deck__body {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+
+  .gate-deck__spec-bars {
+    min-height: 52px;
+  }
+
+  .gate-deck__rail {
+    flex-wrap: wrap;
+  }
+
+  .gate-deck__rail::before {
+    display: none;
+  }
+
+  /* .lb-row__main / .lb-row__sector,__signal,__ai / .lb-inspector used to collapse
+     here too, keyed to VIEWPORT width. That was blind to the fact the leaderboard
+     lives in a column that's viewport − sidebar − the narrative/filters column, so
+     rows could still overflow above 1100px viewport while the column itself was
+     already too narrow (measured: 1280px viewport → 481px column vs a ~633px hard
+     minimum - fit score + chevron silently clipped, no scrollbar). Moved to a
+     @container query on the REAL column width - see .forge-cockpit__outputs below
+     and docs/qa/fe-defect-inventory.md #1. */
+}
+
+/* ==========================================================================
+   Blueprint cockpit - the side-by-side console. Inputs (narrative, mode +
+   Run, filters) tune on the left; the outputs column (gate deck + ranked
+   board) stays sticky on the right and re-ranks live, with the console
+   PINNED at its top so rows stream beneath the instrument. Saved screens
+   retire to a vault strip below the cockpit.
+   ========================================================================== */
+
+/* Blueprint page shell. A stacking context (z-index:0) so the ambient wash can
+   sit behind the page content without leaking over the rest of the app. */
+.forge-page {
+  position: relative;
+  z-index: 0;
+}
+.forge-page__content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ambient wash - pinned to the content pane (right of the sidebar, below the
+   topbar) so it bleeds full-width and runs up UNDER the sticky header with no
+   gap band. Fixed to the viewport, not the centered cockpit column, so wide
+   windows don't reveal plain background at the sides. Same aurora language as
+   the cockpit/startup mesh; behind .forge-page__content (transparent panes let
+   it show through), so the header stays on top of one continuous wash. */
+.forge-page__wash {
+  position: fixed;
+  top: var(--topbar-h);
+  left: var(--sidebar-w);
+  right: 0;
+  height: 340px;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 56% 80% at 22% 0%, rgba(var(--accent-rgb), 0.14), transparent 58%),
+    radial-gradient(ellipse 48% 64% at 84% 6%, rgba(var(--accent-3-rgb), 0.1), transparent 54%);
+}
+
+@media (max-width: 759px) {
+  /* Sidebar collapses to a bottom tab bar - the content pane is full width. */
+  .forge-page__wash {
+    left: 0;
+  }
+}
+
+.forge-cockpit {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--forge-controls-w) minmax(0, 1fr);
+  gap: var(--sp-5);
+  align-items: start;
+  margin-top: var(--sp-4);
+}
+
+.forge-cockpit__inputs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.forge-cockpit__bar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.forge-cockpit__bar .forge-panel__name {
+  /* The jump + actions wrap onto the next line below it. */
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.forge-cockpit__bar-actions {
+  display: flex;
+  gap: var(--sp-2);
+  padding-bottom: 2px;
+}
+
+/* The outputs column is the live instrument: sticky against the app scroller,
+   self-scrolling for deep boards, console pinned at its top. Also a size query
+   container - the leaderboard row layout below responds to THIS element's own
+   rendered width (sidebar + narrative-column narrowed), not the viewport. */
+.forge-cockpit__outputs {
+  container-type: inline-size;
+  container-name: forge-outputs;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+  max-height: calc(100vh - var(--topbar-h) - var(--sp-6));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: var(--sp-1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--accent-rgb), 0.3) transparent;
+}
+
+/* Leaderboard row collapse keyed to the OUTPUTS COLUMN's real width (see
+   docs/qa/fe-defect-inventory.md #1) instead of the viewport. */
+/* Threshold = the 8-column row's real floor (566px content + ~15px scrollbar)
+   plus a small margin. Below this the sector/signal cells fold away. */
+@container forge-outputs (max-width: 590px) {
+  .lb-row__main {
+    /* rank · delta · ticker · name · fit · chev - sector + signal slot fold away. */
+    grid-template-columns: 26px 38px 64px minmax(0, 1fr) 92px 20px;
+  }
+
+  .lb-row__sector,
+  .lb-row__signal,
+  .lb-row__ai {
+    display: none;
+  }
+
+  .lb-inspector {
+    grid-template-columns: 1fr;
+  }
+}
+
+.forge-cockpit__outputs::-webkit-scrollbar {
+  width: 8px;
+}
+
+.forge-cockpit__outputs::-webkit-scrollbar-thumb {
+  background: rgba(var(--accent-rgb), 0.22);
+  border-radius: var(--r-pill);
+}
+
+.forge-cockpit__outputs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.forge-console-pin {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  /* Opaque base + a short fade tail. The board rows scroll BEHIND this pinned
+     console; an over-transparent backdrop let them bleed through and visually
+     collide with the eyebrow + live tag (the "header overlaps the text behind
+     it" and "blue bar that lingers on scroll" reports). Keep it solid under the
+     content, only feathering the very bottom edge so the seam stays soft. */
+  background: linear-gradient(
+    180deg,
+    rgba(var(--bg-rgb), 0.99) 0%,
+    rgba(var(--bg-rgb), 0.99) 90%,
+    rgba(var(--bg-rgb), 0)
+  );
+}
+
+/* Short windows: pinning the console would starve the board of rows. */
+@media (max-height: 760px) {
+  .forge-console-pin {
+    position: static;
+    background: none;
+    padding-bottom: 0;
+  }
+}
+
+.forge-console-pin .gate-deck {
+  margin-bottom: 0;
+}
+
+/* The ranked-board header row: eyebrow + live tag on the left, optional actions
+   on the right. Without an explicit layout these stacked as raw blocks and the
+   inline live tag could ride up over the eyebrow text - the reported overlap. */
+.forge-results__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.forge-results__head .section-title {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.forge-console-pin .forge-results__head {
+  margin-bottom: 0;
+}
+
+.forge-results__note {
+  font-size: var(--type-sm);
+  margin-left: auto;
+}
+
+.forge-empty__action {
+  margin-top: var(--sp-3);
+}
+
+/* ---- Run dock: mode pills + ONE action ---- */
+
+.forge-run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(150deg, rgba(var(--accent-rgb), 0.09), transparent 52%),
+    rgba(var(--bg-deep-rgb), 0.6);
+  transition: border-color var(--motion-base) var(--ease-out);
+}
+
+.forge-run[data-lane="local"] {
+  border-color: var(--border-strong);
+  background:
+    linear-gradient(150deg, rgba(var(--accent-2-rgb), 0.07), transparent 52%),
+    rgba(var(--bg-deep-rgb), 0.45);
+}
+
+.forge-run .rank-mode {
+  margin-bottom: 0;
+}
+
+.forge-run .rank-mode__meaning {
+  font-size: var(--type-sm);
+}
+
+.forge-run__action {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.forge-run__action > .tip {
+  display: flex;
+}
+
+.forge-run__action > .tip > .forge-run__btn {
+  flex: 1;
+}
+
+.forge-run__btn {
+  position: relative;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 18px;
+  font-size: var(--type-body);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+}
+
+.forge-run__btn[aria-disabled="true"],
+.forge-run__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* The run sweep: a light pass that says the agent is out hunting. */
+.forge-run__btn.is-running::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 18%,
+    rgba(var(--accent-bright-rgb), 0.35) 50%,
+    transparent 82%
+  );
+  transform: translateX(-100%);
+  animation: forgeRunSweep 1.5s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+@keyframes forgeRunSweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Local-instant chip: nothing to run, the board is already live. */
+.forge-run__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
+  border-radius: var(--r-sm);
+  background: rgba(var(--accent-rgb), 0.07);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.forge-run__live i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.8);
+  animation: deckLamp 2.6s ease-in-out infinite;
+}
+
+.forge-run__live--paused {
+  color: var(--accent-3);
+  border-color: rgba(var(--accent-3-rgb), 0.4);
+  background: rgba(var(--accent-3-rgb), 0.07);
+}
+
+.forge-run__live--paused i {
+  background: var(--accent-3);
+  box-shadow: 0 0 8px rgba(var(--accent-3-rgb), 0.8);
+  animation: none;
+}
+
+.forge-run__hint {
+  margin: 0;
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+/* ---- Gate deck: AI run stage strip ---- */
+
+.gate-deck__stages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.gate-deck__stages-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-3);
+}
+
+.gate-deck__stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.gate-deck__stage i {
+  position: relative;
+  width: 26px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.16);
+  overflow: hidden;
+}
+
+.gate-deck__stage.is-active {
+  color: var(--text);
+}
+
+.gate-deck__stage.is-active i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  border-radius: inherit;
+  background: var(--grad-brand);
+  animation: stageScan 1.1s var(--ease-out) infinite alternate;
+}
+
+@keyframes stageScan {
+  from {
+    transform: translateX(-30%);
+  }
+  to {
+    transform: translateX(160%);
+  }
+}
+
+.gate-deck__stage.is-done {
+  color: var(--muted);
+}
+
+.gate-deck__stage.is-done i {
+  background: rgba(var(--accent-rgb), 0.55);
+}
+
+/* ---- Ranking pills: AI-lane marker (CSS content stays out of textContent) ---- */
+
+.rank-mode__pill--ai::before {
+  content: "✦";
+  margin-right: 6px;
+  font-size: 8px;
+  color: var(--accent-3);
+  opacity: 0.85;
+}
+
+.rank-mode__row .tip {
+  display: inline-flex;
+}
+
+/* ---- Narrative: extracted-signal tokens + expand row ---- */
+
+.forge-token {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(var(--accent-rgb), 0.32);
+  background: rgba(var(--accent-rgb), 0.08);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.forge-token--expanded {
+  border-color: rgba(var(--accent-3-rgb), 0.42);
+  background: rgba(var(--accent-3-rgb), 0.08);
+  color: var(--accent-3);
+}
+
+.forge-themes {
+  margin-top: var(--sp-3);
+}
+
+/* Narrow controls column: compact chips so the run dock stays near the fold. */
+.forge-narrative .forge-chip {
+  padding: 6px 11px;
+  font-size: 11.5px;
+}
+
+.forge-narrative .forge-narrative__input {
+  min-height: 104px;
+}
+
+.forge-theme-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-pill);
+}
+
+.forge-theme-chip > .tip {
+  display: inline-flex;
+}
+
+.forge-theme-chip--selected {
+  border: 1px solid rgba(var(--accent-rgb), 0.65);
+  background: rgba(var(--accent-rgb), 0.18);
+  box-shadow:
+    0 0 0 1px rgba(var(--accent-rgb), 0.2),
+    0 0 18px rgba(var(--accent-rgb), 0.25);
+  transform: translateY(-1px);
+}
+
+.forge-theme-chip--selected .forge-chip {
+  border: 0;
+  border-radius: var(--r-pill) 0 0 var(--r-pill);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.forge-theme-chip__expand-tip {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-width 0.2s ease,
+    opacity 0.15s ease;
+}
+
+.forge-theme-chip--selected:hover .forge-theme-chip__expand-tip,
+.forge-theme-chip--selected:focus-within .forge-theme-chip__expand-tip {
+  max-width: 28px;
+  opacity: 1;
+}
+
+.forge-theme-chip__expand {
+  display: inline-grid;
+  width: 26px;
+  min-width: 26px;
+  align-self: stretch;
+  place-items: center;
+  border: 0;
+  border-left: 1px solid rgba(var(--accent-rgb), 0.35);
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--type-md);
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.forge-theme-chip__expand:hover,
+.forge-theme-chip__expand:focus-visible {
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--text);
+}
+
+.forge-theme-chip__expand[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.forge-theme-chip__expand[aria-busy="true"] span {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+.forge-expand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: var(--sp-2);
+}
+
+.forge-expand__why {
+  font-size: var(--type-xs);
+}
+
+.forge-expand__note {
+  font-size: var(--type-sm);
+  color: var(--muted);
+}
+
+.forge-expand__note--warn {
+  color: var(--warn);
+}
+
+/* ---- AI research notes (post-run, beside the board) ---- */
+
+.ai-notes {
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid rgba(var(--accent-3-rgb), 0.28);
+  border-radius: var(--r-md);
+  background:
+    linear-gradient(140deg, rgba(var(--accent-3-rgb), 0.07), transparent 55%),
+    rgba(var(--bg-deep-rgb), 0.5);
+}
+
+.ai-notes__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--type-sm);
+  font-weight: 650;
+  color: var(--accent-3);
+}
+
+.ai-notes__model {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.ai-notes__summary {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.ai-notes__cites {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+.ai-notes__cites a {
+  color: var(--accent-3);
+}
+
+.ai-notes__foot {
+  margin: 8px 0 0;
+  font-size: var(--type-xs);
+}
+
+/* ---- Saved screens vault (bottom strip) ---- */
+
+.forge-vault {
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+}
+
+.forge-vault__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.forge-vault__hint {
+  font-size: var(--type-sm);
+}
+
+.forge-vault__link {
+  margin-left: auto;
+  font-size: var(--type-sm);
+}
+
+.forge-vault__empty {
+  font-size: var(--type-sm);
+  margin: 0;
+}
+
+.forge-vault__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--sp-3);
+}
+
+.forge-vault__card {
+  position: relative;
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.forge-vault__card:hover {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  transform: translateY(-1px);
+}
+
+.forge-vault__card.is-active {
+  border-color: rgba(var(--accent-rgb), 0.65);
+  box-shadow: var(--glow-accent);
+}
+
+.forge-vault__load {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  min-width: 0;
+}
+
+.forge-vault__name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.forge-vault__meta {
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.forge-vault__delete {
+  border: none;
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+  padding: 0 12px;
+  font-size: 12px;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.forge-vault__delete:hover,
+.forge-vault__delete:focus-visible {
+  color: var(--bear);
+}
+
+/* ---- Cockpit responsive: stack to one column, release the sticky ---- */
+
+@media (max-width: 1080px) {
+  .forge-cockpit {
+    grid-template-columns: 1fr;
+  }
+
+  .forge-cockpit__outputs {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .forge-console-pin {
+    position: static;
+    background: none;
+    padding-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forge-run__btn.is-running::after,
+  .gate-deck__stage.is-active i::after,
+  .lb-live-tag--busy,
+  .forge-run__live i,
+  .gate-deck__lamp {
+    animation: none;
+  }
+
+  .forge-vault__card:hover {
+    transform: none;
+  }
+}
+
+/* ── Advanced research & AI settings disclosure (Blueprint narrative) ─────── */
+/* The Run Blueprint action, lifted OUT of the advanced dropdown into the main
+   flow. Its child button brings its own styling; this just gives it room. */
+.forge-run-slot {
+  display: flex;
+  margin: 4px 0 2px;
+}
+.forge-run-slot > * {
+  width: 100%;
+}
+
+/* ==========================================================================
+   Advanced research & AI settings - the SAME forge-filter-section disclosure
+   shell as the Sectors/Cap/Catalyst dropdowns, with an accent (accent-3 violet)
+   tint + chevron so it reads as the research/AI surface rather than a hard
+   fundamental filter. Holds the ranking-mode pills, hype-mode segment, theme
+   tags, narrative weight, and the extracted-signal diagnostic.
+   ========================================================================== */
+.forge-advanced-section {
+  margin-top: var(--sp-3);
+  border-color: rgba(var(--accent-3-rgb), 0.34);
+  background:
+    linear-gradient(150deg, rgba(var(--accent-3-rgb), 0.08), transparent 56%),
+    rgba(0, 0, 0, 0.15);
+}
+.forge-advanced-section > .forge-filter-section__summary {
+  position: relative;
+  padding-left: 16px;
+}
+/* A slim accent rail marks it as a different kind of control surface. */
+.forge-advanced-section > .forge-filter-section__summary::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--accent-3-rgb), 0.9),
+    rgba(var(--accent-rgb), 0.6)
+  );
+}
+.forge-advanced-section > .forge-filter-section__summary:hover {
+  background: rgba(var(--accent-3-rgb), 0.06);
+}
+.forge-advanced-section .forge-filter-section__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-3);
+}
+.forge-advanced-section[open] {
+  border-color: rgba(var(--accent-3-rgb), 0.5);
+}
+
+/* A labelled control block inside the advanced panel - a hairline divider keeps
+   ranking mode / hype / themes / weight legibly separated.
+   HAZARD: .forge-influence USED to be included here via
+   `.forge-filter-section__body > .forge-influence`. It also carries its own
+   `.is-active` border-color rule (components.css) of equal specificity; since
+   this file loads after components.css, this rule's plain `border-top` always
+   won on that one edge, giving the active state a 3-sides-bright/1-side-dim
+   border (docs/qa/fe-defect-inventory.md #2). Fixed by giving .forge-influence
+   its own spacing rule (components.css) instead of sharing this one. Before
+   adding any new child/sibling-combinator divider target here (or reusing this
+   pattern elsewhere - ~10 similar sites are catalogued in inventory #16),
+   check whether that target also has its own state-driven border-color rule;
+   prefer outline/box-shadow for "active" emphasis so it can't collide with a
+   divider's border-top. */
+.forge-adv-group + .forge-adv-group,
+.forge-filter-section__body > .forge-narrative__extracted {
+  margin-top: var(--sp-1);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+}
+.forge-advanced-section .forge-themes {
+  margin-top: 0;
+}
+.forge-advanced-section .forge-narrative__extracted {
+  margin-top: var(--sp-1);
+}
+
+/* ---- Ranking-mode pills (compact, lives in the advanced dropdown) ----
+   Exactly 3 modes (fundamentals / blended / ai) - a fixed 3-up grid keeps
+   them evenly spaced instead of auto-fit wrapping unevenly at odd widths. */
+.rank-pick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (max-width: 480px) {
+  .rank-pick {
+    grid-template-columns: 1fr;
+  }
+}
+.rank-pick .tip {
+  display: flex;
+}
+.rank-pick .tip > .rank-pick__pill {
+  width: 100%;
+}
+.rank-pick__pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+.rank-pick__pill:hover {
+  color: var(--text);
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+/* The label must be ALLOWED TO SHRINK. A flex item defaults to `min-width: auto`, i.e. it refuses
+   to go below its min-content width - so the longest label ("Fundamentals only") held the row open
+   past the pill and shoved the LOCAL badge out the right-hand side, where it floated over the
+   neighbouring pill by ~15px and drifted with the viewport (the bug the owner saw). `min-width: 0` lets it
+   wrap inside the pill instead. `break-word`, NOT `anywhere`: `anywhere` snaps mid-word and renders
+   "Funda / ntals" once the column gets tight. */
+.rank-pick__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: break-word;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+/* The badge never shrinks - otherwise the overflow just moves onto its own text
+    - so when the pill gets too narrow for label + badge side by side, the pill's
+   `flex-wrap` drops the badge onto its own line rather than letting either one
+   spill. Wide layouts are unchanged: both still fit on one row. */
+.rank-pick__lane {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 2px 6px;
+}
+.rank-pick__pill--ai .rank-pick__lane {
+  color: var(--accent-3);
+  border-color: rgba(var(--accent-3-rgb), 0.42);
+}
+.rank-pick__pill--on {
+  color: var(--text);
+  border-color: rgba(var(--accent-rgb), 0.7);
+  background: rgba(var(--accent-rgb), 0.16);
+  box-shadow:
+    0 0 0 1px rgba(var(--accent-rgb), 0.2),
+    0 0 16px rgba(var(--accent-rgb), 0.22);
+}
+.rank-pick__pill--on .rank-pick__lane {
+  color: var(--accent);
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+.rank-pick__pill--ai.rank-pick__pill--on {
+  border-color: rgba(var(--accent-3-rgb), 0.7);
+  background: rgba(var(--accent-3-rgb), 0.16);
+  box-shadow:
+    0 0 0 1px rgba(var(--accent-3-rgb), 0.2),
+    0 0 16px rgba(var(--accent-3-rgb), 0.22);
+}
+.rank-pick__pill--ai.rank-pick__pill--on .rank-pick__lane {
+  color: var(--accent-3);
+}
+
+/* ---- Run-dock active-mode header (reflects the in-dropdown pick) ---- */
+.rank-mode__active {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.rank-mode__active-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.rank-mode__active-mode {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.rank-mode__active-mode--ai {
+  color: var(--accent-3);
+}
+
+/* ---- Hype-mode segmented control (was a stray floating checkbox) ---- */
+.forge-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.25);
+}
+.forge-seg__btn {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+.forge-seg__btn:hover {
+  color: var(--text);
+}
+.forge-seg__btn--on {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.forge-seg__btn--accent.forge-seg__btn--on {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.16);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45);
+}

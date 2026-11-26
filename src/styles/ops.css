@@ -1,0 +1,1729 @@
+/* Ops surfaces - Research transparency, Operator console (/admin), Your Desk (/desk).
+   Speaks the core design language: graphite glass, azure accents, mono numerics.
+   Tokens only - no raw hex outside rgba(var(--*-rgb)) composites. */
+
+/* ── Quota board ─────────────────────────────────────────────────────────── */
+
+/* One shared card recipe; .ops-board is the full-width hero variant,
+   .ops-card (defined below) the stackable section variant. */
+.ops-board,
+.ops-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+}
+
+.ops-board {
+  margin-bottom: var(--sp-5);
+}
+
+.ops-board__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+
+.ops-board__title {
+  font-family: var(--font-display);
+  font-size: var(--type-title);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.ops-board__sub {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  margin-top: var(--sp-1);
+  max-width: 560px;
+}
+
+/* Data-quality chip - paired label + dot, never color alone */
+.quality-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 6px var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.quality-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.quality-chip--full .quality-chip__dot {
+  background: var(--accent-bright);
+  box-shadow: 0 0 8px rgba(var(--accent-bright-rgb), 0.7);
+}
+.quality-chip--elevated .quality-chip__dot {
+  background: var(--warn);
+  box-shadow: 0 0 8px rgba(var(--warn-rgb), 0.6);
+}
+.quality-chip--degraded .quality-chip__dot {
+  background: var(--bear);
+  box-shadow: 0 0 8px rgba(var(--bear-rgb), 0.6);
+  animation: pulseGlow 1.6s ease-in-out infinite;
+}
+.quality-chip--paused .quality-chip__dot {
+  background: var(--faint);
+}
+
+/* Vendor cards */
+.vendor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(222px, 1fr));
+  gap: var(--sp-3);
+}
+
+.vendor-card {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+  animation: fadeInUp var(--motion-slow) var(--ease-out) backwards;
+}
+
+.vendor-card:nth-child(2) { animation-delay: calc(var(--motion-stagger) * 1); }
+.vendor-card:nth-child(3) { animation-delay: calc(var(--motion-stagger) * 2); }
+.vendor-card:nth-child(4) { animation-delay: calc(var(--motion-stagger) * 3); }
+.vendor-card:nth-child(5) { animation-delay: calc(var(--motion-stagger) * 4); }
+.vendor-card:nth-child(6) { animation-delay: calc(var(--motion-stagger) * 5); }
+.vendor-card:nth-child(7) { animation-delay: calc(var(--motion-stagger) * 6); }
+.vendor-card:nth-child(8) { animation-delay: calc(var(--motion-stagger) * 7); }
+.vendor-card:nth-child(9) { animation-delay: calc(var(--motion-stagger) * 8); }
+
+.vendor-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.vendor-card--ghost {
+  opacity: 0.62;
+  border-style: dashed;
+}
+
+/* Identity: provider (who serves it) as a full-width kicker, role + status on
+   the row below - so a long provider name never collides with the status pill. */
+.vendor-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vendor-card__headrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.vendor-card__provider {
+  font-family: var(--font-display);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vendor-card__name {
+  font-weight: 650;
+  font-size: var(--type-body);
+  line-height: 1.2;
+}
+
+/* The 2nd-Finnhub-key failover row, visually paired to the azure main row with
+   the warm gold spark so the two read as one main/backup unit. */
+.vendor-card--backup {
+  border-color: rgba(var(--accent-3-rgb), 0.22);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--accent-3-rgb), 0.05),
+    var(--surface-2)
+  );
+}
+.vendor-card--backup .vendor-card__provider {
+  color: var(--accent-3);
+}
+
+/* Honest stand-in when per-key counts live server-side (proxy build): no fake
+   gauge - a calm note where the numbers would be. */
+.vendor-card__serverside {
+  border-left: 2px solid rgba(var(--accent-3-rgb), 0.5);
+  padding: 2px 0 2px var(--sp-3);
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--type-xs);
+  line-height: 1.5;
+}
+
+.vendor-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  white-space: nowrap;
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.vendor-status__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.vendor-status--ok .vendor-status__dot { background: var(--accent); }
+.vendor-status--idle .vendor-status__dot { background: var(--faint); }
+.vendor-status--elevated .vendor-status__dot { background: var(--warn); }
+.vendor-status--critical .vendor-status__dot {
+  background: var(--bear);
+  box-shadow: 0 0 7px rgba(var(--bear-rgb), 0.7);
+}
+
+/* Quota meter - fuel-gauge bar, fill animates on change */
+.quota-meter {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.1);
+  overflow: hidden;
+}
+
+.quota-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width var(--motion-slow) var(--ease-out);
+  /* width comes from the component: 0 at zero usage, floored at 2% otherwise */
+}
+
+.quota-meter__fill--elevated {
+  background: linear-gradient(90deg, var(--accent-3), var(--warn));
+}
+
+.quota-meter__fill--critical {
+  background: linear-gradient(90deg, var(--warn), var(--bear));
+}
+
+.vendor-card__nums {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.vendor-card__big {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.vendor-card__unit {
+  color: var(--faint);
+  font-size: var(--type-xs);
+  margin-left: var(--sp-1);
+}
+
+/* Explicit scope tag on the headline gauge ("· this device today") - names the
+   persistent device ledger so it never gets read as the same number as the
+   server-side pool total below it. */
+.vendor-card__scope {
+  color: var(--faint);
+  font-style: italic;
+}
+
+.vendor-card__minor {
+  color: var(--muted);
+  font-size: var(--type-xs);
+  text-align: right;
+}
+
+/* Compact metadata block (replaces the old run-on note): a faint allowance
+   line + a wrapped row of small fact tags - scannable, not a sentence. */
+.vendor-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-2);
+}
+
+.vendor-card__allowance {
+  color: var(--faint);
+  font-size: var(--type-xs);
+  line-height: 1.45;
+}
+
+.vendor-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.vendor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.vendor-tag--err {
+  border-color: rgba(var(--bear-rgb), 0.35);
+  background: rgba(var(--bear-rgb), 0.08);
+  color: var(--bear);
+}
+
+.vendor-tag--faint {
+  color: var(--faint);
+  font-weight: 500;
+}
+
+.vendor-card__feeds {
+  color: var(--muted);
+  /* Primary readable line (what this vendor powers) - 12px, not the 11px reserved
+     for the kicker/tags, so the card reads less dense. */
+  font-size: var(--type-sm);
+  line-height: 1.5;
+}
+
+/* Backup / rotation chip - shows the operator that failover is wired (a 2nd
+   Finnhub key rotating on a 429, or the research proxy's server-side backup
+   model). Subtle accent so it reads as "configured", not as an alert. */
+.vendor-card__failover {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.vendor-card__failover-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.6);
+}
+
+/* Trailing 10-minute pulse strip */
+.pulse-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-1);
+  height: 44px;
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+}
+
+.pulse-strip__bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.pulse-strip__fill {
+  border-radius: 3px 3px 0 0;
+  background: rgba(var(--accent-rgb), 0.55);
+  min-height: 2px;
+  transition: height var(--motion-base) var(--ease-out);
+}
+
+.pulse-strip__fill.is-zero {
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.pulse-strip__caption {
+  color: var(--faint);
+  font-size: var(--type-xs);
+  margin-top: var(--sp-2);
+}
+
+/* ── Research explainer (how a run works) ────────────────────────────────── */
+
+.run-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.run-step {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  animation: fadeInUp var(--motion-slow) var(--ease-out) backwards;
+}
+
+.run-step:nth-child(2) { animation-delay: calc(var(--motion-stagger) * 1); }
+.run-step:nth-child(3) { animation-delay: calc(var(--motion-stagger) * 2); }
+.run-step:nth-child(4) { animation-delay: calc(var(--motion-stagger) * 3); }
+.run-step:nth-child(5) { animation-delay: calc(var(--motion-stagger) * 4); }
+
+/* connector arrow between steps on wide layouts */
+.run-step:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--faint);
+  font-size: var(--type-sm);
+  z-index: 1;
+}
+
+@media (max-width: 1000px) {
+  .run-step::after {
+    display: none;
+  }
+}
+
+.run-step__index {
+  font-family: var(--font-mono);
+  font-size: var(--type-xs);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+
+.run-step__title {
+  font-weight: 650;
+  font-size: var(--type-body);
+  line-height: 1.3;
+}
+
+.run-step__what {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.run-step__sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.source-chip {
+  font-family: var(--font-mono);
+  font-size: var(--type-xs);
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 2px var(--sp-2);
+}
+
+.source-chip--local {
+  color: var(--accent-bright);
+  background: rgba(var(--accent-bright-rgb), 0.08);
+}
+
+/* ── Admin overview stat strip ───────────────────────────────────────────── */
+/* The four at-a-glance stats at the top of the Operator Console. Give them
+   card frames so they read as an instrument panel, not loose floating numbers. */
+.admin-overview .stat {
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle left-edge accent on the first stat (online count) to anchor the eye. */
+.admin-overview .stat:first-child {
+  border-left-color: rgba(var(--accent-rgb), 0.5);
+  box-shadow: inset 3px 0 0 rgba(var(--accent-rgb), 0.4);
+}
+
+.admin-overview .stat__label {
+  font-size: var(--type-xs);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: var(--sp-2);
+}
+
+.admin-overview .stat__value {
+  font-size: var(--type-headline);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* ── Operator console ────────────────────────────────────────────────────── */
+
+.gate-card {
+  max-width: 480px;
+  margin: 9vh auto 0;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-7) var(--sp-6);
+  animation: fadeInUp var(--motion-slow) var(--ease-out);
+}
+
+.gate-card__icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto var(--sp-4);
+  border-radius: var(--r);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  border: 1px solid var(--border-strong);
+}
+
+.gate-card h2 {
+  font-family: var(--font-display);
+  font-size: var(--type-headline);
+  margin: 0 0 var(--sp-2);
+}
+
+.gate-card p {
+  color: var(--muted);
+  font-size: var(--type-body);
+  line-height: 1.6;
+  margin: 0 0 var(--sp-4);
+}
+
+.gate-card .env-hint {
+  display: block;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--type-sm);
+  color: var(--muted);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3) var(--sp-4);
+  margin: var(--sp-4) 0;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Switch - accessible toggle (button[role=switch]) */
+.ops-switch {
+  --switch-w: 40px;
+  --switch-h: 22px;
+  position: relative;
+  width: var(--switch-w);
+  height: var(--switch-h);
+  flex: none;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  cursor: pointer;
+  padding: 0;
+  transition: background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+
+.ops-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(var(--switch-h) - 6px);
+  height: calc(var(--switch-h) - 6px);
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out);
+}
+
+.ops-switch[aria-checked="true"] {
+  background: rgba(var(--accent-rgb), 0.32);
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+
+.ops-switch[aria-checked="true"]::after {
+  transform: translateX(calc(var(--switch-w) - var(--switch-h)));
+  background: var(--accent-bright);
+}
+
+.ops-switch:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ops-switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  min-height: 52px;
+}
+
+.control-row + .control-row {
+  border-top: 1px solid var(--border);
+}
+
+.control-row__label {
+  font-weight: 600;
+  font-size: var(--type-body);
+  color: var(--text);
+}
+
+.control-row__hint {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  margin-top: var(--sp-1);
+  line-height: 1.5;
+  max-width: 420px;
+}
+
+.budget-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-2);
+}
+
+.budget-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+}
+
+.budget-row + .budget-row {
+  border-top: 1px solid var(--border);
+}
+
+.budget-row__name {
+  font-size: var(--type-sm);
+  font-weight: 600;
+}
+
+.budget-row__today {
+  color: var(--faint);
+  font-size: var(--type-xs);
+}
+
+.budget-row input {
+  width: 88px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--type-sm);
+  padding: 6px var(--sp-2);
+  text-align: right;
+}
+
+/* Input + Save grouped on the right edge of each budget row. */
+.budget-row__edit {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.budget-row input.is-invalid {
+  border-color: rgba(var(--bear-rgb), 0.6);
+  box-shadow: 0 0 0 2px rgba(var(--bear-rgb), 0.16);
+}
+
+.budget-row__save {
+  min-width: 76px;
+  justify-content: center;
+  gap: 5px;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.budget-row__save:disabled {
+  opacity: 0.4;
+}
+
+/* Saved confirmation pulse - a calm success state, not the primary accent. */
+.budget-row__save.is-saved {
+  background: rgba(var(--bull-rgb), 0.16);
+  border: 1px solid rgba(var(--bull-rgb), 0.42);
+  color: var(--bull);
+  opacity: 1;
+}
+
+/* Small avatar variant for dense directory rows (base .avatar is 34px). */
+.avatar--sm {
+  width: 32px;
+  height: 32px;
+  font-size: var(--type-sm);
+}
+
+.budget-row input:focus {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.55);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18);
+}
+
+/* Directory (who's using it) */
+.dir-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.dir-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+
+.dir-row__name {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.dir-row__handle {
+  color: var(--faint);
+  font-size: var(--type-sm);
+}
+
+.online-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--bull);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.online-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bull);
+  box-shadow: 0 0 7px rgba(var(--bull-rgb), 0.7);
+}
+
+.you-pill {
+  margin-left: var(--sp-2);
+  font-size: var(--type-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-bright);
+  background: rgba(var(--accent-bright-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-bright-rgb), 0.3);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+}
+
+/* ── Controls card sections (M3 hierarchy) ───────────────────────────────── */
+
+/* Groups a labelled cluster of control rows - replaces the old flat run of
+   control-rows with no visual separation between unrelated groups. */
+.ctrl-section {
+  padding: var(--sp-4) 0;
+  border-top: 1px solid var(--border);
+}
+
+.ctrl-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.ctrl-section__label {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-display);
+  font-size: var(--type-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: var(--sp-2);
+  padding: 3px var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.ctrl-section__hint {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.55;
+  margin: 0 0 var(--sp-3);
+}
+
+/* ── Your Desk ───────────────────────────────────────────────────────────── */
+
+.desk-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5) var(--sp-6);
+  margin-bottom: var(--sp-5);
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp var(--motion-slow) var(--ease-out);
+}
+
+/* signature: faint azure beam sweeping behind the identity */
+.desk-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40% -20%;
+  background: radial-gradient(
+    ellipse at 12% 30%,
+    rgba(var(--accent-rgb), 0.14),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.desk-hero__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--text);
+  border: 2px solid var(--border-strong);
+  overflow: hidden;
+  position: relative;
+}
+
+.desk-hero__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.desk-hero__name {
+  font-family: var(--font-display);
+  font-size: var(--type-headline);
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.desk-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  color: var(--muted);
+  font-size: var(--type-sm);
+  position: relative;
+}
+
+.desk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .desk-grid {
+    grid-template-columns: 1fr;
+  }
+  .desk-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-4);
+  }
+}
+
+.desk-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+}
+
+/* Clickable variant of the existing .usage-tile stat primitive (components.css)
+    - same resting look, plus link affordances. Used by Your Desk. */
+a.usage-tile--link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+a.usage-tile--link:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+
+a.usage-tile--link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.form-feedback {
+  font-size: var(--type-sm);
+  margin-top: var(--sp-2);
+}
+
+.form-feedback--ok {
+  color: var(--bull);
+}
+
+.form-feedback--error {
+  color: var(--bear);
+}
+
+/* Shared section card for ops pages (lighter than .signal-card).
+   Base recipe lives with .ops-board at the top of this file. */
+.ops-card + .ops-card {
+  margin-top: var(--sp-4);
+}
+
+.ops-card__title {
+  font-family: var(--font-display);
+  font-size: var(--type-body);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  margin-bottom: var(--sp-1);
+}
+
+.ops-card__sub {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.55;
+  margin: 0 0 var(--sp-4);
+}
+
+.ops-banner {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  border: 1px solid rgba(var(--warn-rgb), 0.35);
+  background: rgba(var(--warn-rgb), 0.08);
+  color: var(--text);
+  border-radius: var(--r);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--type-sm);
+  line-height: 1.55;
+  margin-bottom: var(--sp-4);
+}
+
+.ops-banner--error {
+  border-color: rgba(var(--bear-rgb), 0.4);
+  background: rgba(var(--bear-rgb), 0.08);
+}
+
+/* ── Model registry (champion/challenger control) ─────────────────────────── */
+.model-eval {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.model-eval__badge {
+  padding: 3px var(--sp-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--type-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.model-eval__badge--ready {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--text);
+}
+.model-eval__metric {
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+.model-eval__note {
+  margin-top: var(--sp-2);
+  font-size: var(--type-sm);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.model-eval__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.model-list {
+  list-style: none;
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.model-row {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  padding: var(--sp-3);
+}
+.model-row--live {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.16) inset;
+}
+.model-row__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.model-kind {
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  font-size: var(--type-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  color: var(--faint);
+}
+.model-kind--champion {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  color: var(--accent);
+}
+.model-kind--challenger {
+  border-color: rgba(var(--gold-rgb, 214, 178, 102), 0.5);
+  color: var(--gold, #d6b266);
+}
+.model-row__label {
+  font-weight: 600;
+  font-size: var(--type-sm);
+  color: var(--text);
+}
+.model-row__livetag {
+  margin-left: auto;
+  font-size: var(--type-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.model-row__summary {
+  margin-top: var(--sp-2);
+  font-size: var(--type-sm);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.model-row__meta {
+  margin-top: var(--sp-2);
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+.model-row .btn {
+  margin-top: var(--sp-3);
+}
+
+/* ---------------------------------------------------------------------------
+   Engine ops section (Research automation, relocated to Your Desk)
+   --------------------------------------------------------------------------- */
+.engine-ops {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+}
+.engine-ops__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.engine-ops__head .btn {
+  flex: none;
+}
+.engine-ops__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .engine-ops__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Key rotation, folded INTO each pooled vendor card ─────────────────────────
+   The old separate "Key pool" panel is gone - Finnhub/FMP/Gemini/Groq each show
+   their server-side key lamps + active key inside their own source card, so the
+   board is ONE coherent view with no doubling-up. */
+
+/* The per-key lamp strip inside a vendor card. */
+.vendor-card__keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+/* The honest one-liner under the lamps: key count · which key is next ·
+   failover count · server-side caveat. Small, scannable facts - not a sentence. */
+.vendor-card__keyline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  color: var(--muted);
+  
+  font-size: var(--type-sm);
+  line-height: 1.4;
+}
+
+.vendor-card__keyline .mono {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Key rotation lamps (the per-key chips) ── */
+.pool-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 28px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  font-size: var(--type-xs);
+  background: color-mix(in srgb, var(--faint) 8%, transparent);
+}
+.pool-key__idx {
+  color: var(--faint);
+  font-weight: 600;
+}
+.pool-key__n {
+  color: var(--text);
+  font-weight: 600;
+}
+.pool-key--ok {
+  border-color: rgba(var(--bull-rgb), 0.45);
+  background: rgba(var(--bull-rgb), 0.12);
+}
+.pool-key--err {
+  border-color: rgba(var(--bear-rgb), 0.45);
+  background: rgba(var(--bear-rgb), 0.12);
+}
+.pool-key.is-next {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 1px;
+}
+
+/* ── Numbered tappable key chips (mobile-first) ─────────────────────────────
+   Each pooled vendor (Finnhub, FMP, Gemini, Groq) renders its keys as
+   interactive buttons. Tapping one toggles a detail panel for that key.
+   The chip strip and all panels live inside .vendor-card__keys.              */
+
+/* Row that holds the chips - wraps on small widths. */
+.pool-key-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+/* Pool summary - the OVERALL anchor above the per-key chips. */
+.pool-key-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: var(--sp-2);
+  flex-wrap: wrap;
+}
+.pool-key-summary__total {
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: var(--text);
+}
+.pool-key-summary__label {
+  font-size: var(--type-xs);
+  color: var(--muted);
+}
+.pool-key-summary__next {
+  color: var(--accent);
+}
+
+/* Reconciliation note - bridges the two clocks (persistent device ledger vs the
+   server's cold-resettable per-key counters) so a server "0" under a device "10"
+   reads as expected, not broken. Only rendered when they actually disagree. */
+.pool-key-reconcile {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--type-xs);
+  line-height: 1.45;
+  color: var(--muted);
+}
+.pool-key-reconcile .mono {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Relative-usage fill: a subtle accent bar across the bottom of each chip,
+   proportional to that key's share of the BUSIEST key (--key-share 0..1) - so the
+   relative load across keys reads at a glance, even before tapping one open. */
+.pool-key {
+  position: relative;
+  overflow: hidden;
+}
+.pool-key::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: calc(var(--key-share, 0) * 100%);
+  background: var(--accent);
+  opacity: 0.55;
+  transition: width var(--motion-fast) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pool-key::after {
+    transition: none;
+  }
+}
+
+/* Per-key share of the pool total, shown in the open detail panel header. */
+.pool-key__detail-share {
+  margin-left: auto;
+  font-size: var(--type-xs);
+  color: var(--muted);
+}
+
+/* Re-type .pool-key as a button - inherits all existing tone modifiers but
+   gains tap affordance, focus ring, and a subtle pressed state. */
+.pool-key {
+  /* override browser button defaults */
+  -webkit-appearance: none;
+  appearance: none;
+  background: color-mix(in srgb, var(--faint) 8%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 52px;           /* wide enough to read "Key 4" at a glance */
+  padding: 5px 8px;          /* slightly taller than the old 2px·6px - easier tap target */
+  cursor: pointer;
+  font-size: var(--type-xs);
+  line-height: 1;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+  user-select: none;
+  text-align: left;
+}
+
+.pool-key:hover {
+  background: color-mix(in srgb, var(--faint) 14%, transparent);
+  border-color: var(--border-strong);
+}
+
+.pool-key:active {
+  transform: scale(0.96);
+}
+
+.pool-key:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Open state: a gentle accent tint so the active chip reads as selected. */
+.pool-key.is-open {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+/* "Key" label - full word, uppercase kicker style */
+.pool-key__label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Ordinal number */
+.pool-key__idx {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Call count badge - only visible when > 0 */
+.pool-key__n {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Idle/next state word shown in place of a count when a key has 0 server calls
+   (cold start or next-in-rotation) - small + faint so it reads as a STATE, not a
+   missing number. This is what stops a 0-call key looking like a broken chip. */
+.pool-key__idle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--faint);
+}
+.pool-key.is-next .pool-key__idle {
+  color: var(--accent);
+}
+
+/* Tiny dot on the "next in rotation" chip - echoes the status dot language. */
+.pool-key__next-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--accent);
+  box-shadow: 0 0 5px rgba(var(--accent-rgb), 0.65);
+  margin-left: 2px;
+}
+
+/* ── Per-key detail panel ──────────────────────────────────────────────────
+   Slides open below the chip strip when a key is tapped.
+   max-height transition fakes height:auto animation; clamp keeps it smooth. */
+
+.pool-key__detail {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  /* Two-prop transition: height collapses first, opacity fades */
+  transition:
+    max-height var(--motion-base) var(--ease-out),
+    opacity var(--motion-fast) var(--ease-out);
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  margin-top: 0;
+}
+
+.pool-key__detail.is-open {
+  max-height: 120px;          /* generous cap - actual content ~72px */
+  opacity: 1;
+  border-color: var(--border);
+  background: var(--surface);
+  margin-top: var(--sp-2);
+  padding: var(--sp-3);
+}
+
+/* Reduce motion: skip the height animation, just fade. */
+@media (prefers-reduced-motion: reduce) {
+  .pool-key__detail {
+    transition: opacity var(--motion-fast) var(--ease-out);
+  }
+  .pool-key__detail.is-open {
+    max-height: none;
+  }
+}
+
+/* Tone variants: subtle left border matches the chip's colour signal. */
+.pool-key__detail--ok.is-open  { border-left: 3px solid rgba(var(--bull-rgb), 0.55); }
+.pool-key__detail--err.is-open { border-left: 3px solid rgba(var(--bear-rgb), 0.55); }
+.pool-key__detail--idle.is-open { border-left: 3px solid var(--border-strong); }
+
+/* Header: key title + "next in rotation" badge on the same line. */
+.pool-key__detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.pool-key__detail-title {
+  font-weight: 700;
+  font-size: var(--type-sm);
+  color: var(--text);
+}
+
+.pool-key__next-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent-bright);
+  background: rgba(var(--accent-bright-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-bright-rgb), 0.3);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+}
+
+/* Four-column stat grid: Calls · OK · Failovers · Last status */
+.pool-key__detail-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-2);
+}
+
+.pool-key__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pool-key__stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.pool-key__stat-value {
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Semantic colour modifiers for the stat values */
+.pool-key__stat-value--ok   { color: var(--bull); }
+.pool-key__stat-value--warn { color: var(--warn); }
+.pool-key__stat-value--err  { color: var(--bear); }
+.pool-key__stat-value--faint { color: var(--faint); }
+
+/* Per-key free-tier budget row - the allowance each individual key spends
+   against, so a key's call count reads relative to a real cap. Shows " - " when no
+   verifiable per-key limit exists (Groq), never a fabricated number. */
+.pool-key__budget {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-2);
+  border-top: 1px dashed var(--border);
+}
+.pool-key__budget-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.pool-key__budget-value {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* ===========================================================================
+   POOLED (cross-user) usage board - the PRIMARY view: TRUE total usage of the
+   shared keys across everybody, vs each vendor's pooled daily limit. Distinct,
+   slightly elevated framing so it reads as "everybody" above the per-device card
+   grid below it.
+   =========================================================================== */
+.pooled-board {
+  padding: var(--sp-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(var(--accent-rgb), 0.07), transparent 60%),
+    var(--surface);
+}
+
+.pooled-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--sp-3);
+}
+
+.pooled-card {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+  animation: fadeInUp var(--motion-slow) var(--ease-out) backwards;
+}
+.pooled-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+
+.pooled-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.pooled-card__provider {
+  font-size: var(--type-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.pooled-card__keys {
+  font-size: var(--type-xs);
+  font-weight: 600;
+  color: var(--faint);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.pooled-card__nums {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+}
+.pooled-card__big {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+.pooled-card__unit {
+  color: var(--faint);
+  font-size: var(--type-xs);
+}
+
+.pooled-card__budgetline {
+  color: var(--muted);
+  font-size: var(--type-xs);
+  line-height: 1.4;
+}
+.pooled-card__budgetline--nocap {
+  color: var(--faint);
+  font-style: italic;
+}
+
+/* Per-key load bars - which key is carrying the pool today. */
+.pooled-card__keys-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+.pooled-key {
+  display: grid;
+  grid-template-columns: 28px 1fr 40px;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.pooled-key__label {
+  font-size: var(--type-xs);
+  color: var(--faint);
+  font-weight: 600;
+}
+.pooled-key__bar {
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: rgba(var(--accent-rgb), 0.1);
+  overflow: hidden;
+}
+.pooled-key__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width var(--motion-slow) var(--ease-out);
+}
+.pooled-key__n {
+  font-size: var(--type-xs);
+  color: var(--muted);
+  font-weight: 600;
+  text-align: right;
+}
+
+.pooled-card__feeds {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.pooled-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: auto;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border);
+}
+
+.pooled-board__foot {
+  margin-top: var(--sp-3);
+  color: var(--faint);
+  font-size: var(--type-xs);
+  line-height: 1.5;
+}
+
+/* Skeleton while the first server read is in flight. */
+.pooled-skeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: var(--sp-3);
+}
+.pooled-skeleton__card {
+  height: 148px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    100deg,
+    var(--surface-2) 30%,
+    rgba(var(--accent-rgb), 0.06) 50%,
+    var(--surface-2) 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pooled-skeleton__card { animation: none; }
+}
+
+/* Engine version lineage strip (v1 → v4) - Operator registry + Track Record / Model
+   Lab. The LIVE chip is derived from the resolved active variant, never hardcoded. */
+.engine-lineage {
+  margin: var(--sp-3) 0 var(--sp-4);
+}
+.engine-lineage__track {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.engine-lineage__step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.engine-lineage__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--type-sm);
+  font-weight: 600;
+}
+.engine-lineage__chip--live {
+  color: var(--bg-deep);
+  border-color: transparent;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(var(--accent-rgb), 0.35);
+}
+.engine-lineage__live {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(var(--bg-deep-rgb), 0.28);
+}
+/* The forward candidate (V5) being measured against the live champion - a dashed,
+   amber-tinted outline so it reads as "in testing", clearly distinct from LIVE. */
+.engine-lineage__chip--candidate {
+  color: var(--text);
+  border-style: dashed;
+  border-color: rgba(var(--warn-rgb), 0.55);
+  background: rgba(var(--warn-rgb), 0.1);
+}
+.engine-lineage__cand {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(var(--warn-rgb), 0.22);
+  color: var(--text);
+}
+.engine-lineage__arrow {
+  color: var(--muted);
+  opacity: 0.55;
+}
+.engine-lineage__cap {
+  margin: var(--sp-2) 0 0;
+  color: var(--muted);
+  font-size: var(--type-sm);
+}

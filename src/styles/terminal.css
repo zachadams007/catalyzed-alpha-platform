@@ -1,0 +1,1429 @@
+/* ============================================================================
+   Terminal - command bar (⌘K) + security workspace
+   Built on the design tokens in tokens.css. No raw hex, no arbitrary px beyond
+   the thin dense-grid primitives the build plan calls for.
+   ============================================================================ */
+
+/* ---- Global command bar (cmdk) ------------------------------------------- */
+
+.cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12vh var(--sp-4) var(--sp-4);
+  background: rgba(3, 4, 10, 0.62);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.cmdk-panel {
+  width: min(660px, 94vw);
+  max-height: 78vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(63, 95, 201, 0.08);
+  overflow: hidden;
+}
+
+.cmdk-panel [cmdk-root] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cmdk-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.cmdk-input-row__icon {
+  color: var(--faint);
+  flex: none;
+}
+
+.cmdk-panel [cmdk-input] {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.cmdk-panel [cmdk-input]::placeholder {
+  color: var(--faint);
+}
+
+.cmdk-context {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: rgba(63, 95, 201, 0.16);
+  border: 1px solid rgba(63, 95, 201, 0.4);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cmdk-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.cmdk-panel [cmdk-list] {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--sp-2);
+  scroll-padding: var(--sp-4);
+}
+
+.cmdk-panel [cmdk-group-heading] {
+  padding: var(--sp-3) var(--sp-3) var(--sp-1);
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cmdk-panel [cmdk-item] {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  scroll-margin: var(--sp-2);
+}
+
+.cmdk-panel [cmdk-item][data-selected="true"] {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.cmdk-panel [cmdk-item][data-selected="true"] .cmdk-item__icon {
+  color: var(--accent);
+}
+
+.cmdk-panel [cmdk-item][data-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.cmdk-item__icon {
+  flex: none;
+  display: inline-flex;
+  color: var(--faint);
+}
+
+.cmdk-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cmdk-item__label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmdk-item__sub {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmdk-item__hint {
+  flex: none;
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.cmdk-empty,
+.cmdk-panel [cmdk-empty] {
+  padding: var(--sp-6) var(--sp-4);
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cmdk-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  border-top: 1px solid var(--border);
+  background: var(--bg-deep, var(--bg-elev));
+}
+
+.cmdk-foot__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--faint);
+  font-size: 11px;
+}
+
+.cmdk-foot__brand {
+  margin-left: auto;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* TopBar trigger ----------------------------------------------------------- */
+
+.cmdk-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.cmdk-trigger:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.cmdk-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+   Security workspace (/terminal/:ticker)
+   ============================================================================ */
+
+/* Dense-grid primitives the build plan calls for (reusable in Phase 2 tables). */
+:root {
+  --col-w-xs: 56px;
+  --col-w-sm: 84px;
+  --col-w-md: 120px;
+  --col-w-lg: 168px;
+}
+
+.data-row {
+  display: grid;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 6px var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.data-row:last-child {
+  border-bottom: none;
+}
+.data-cell {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-cell--num {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tw-workspace {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Quote header -------------------------------------------------------- */
+
+.tw-quote {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+  padding: var(--sp-4) var(--sp-5);
+  margin: var(--sp-2) 0 var(--sp-4);
+  background: var(--bg-deep, var(--bg-elev));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+
+.tw-quote__main {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.tw-quote__id {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.tw-quote__ticker {
+  font-size: 30px;
+  line-height: 1.1;
+}
+.tw-quote__name {
+  color: var(--muted);
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tw-quote__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: var(--sp-2);
+}
+.tw-quote__price {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.tw-quote__chg {
+  font-size: 15px;
+  font-weight: 600;
+}
+.tw-quote__cap {
+  font-size: 13px;
+}
+.tw-quote__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bull);
+}
+.tw-quote__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--bull);
+  box-shadow: 0 0 0 0 rgba(var(--bull-rgb), 0.5);
+  animation: pulseGlow 2s ease infinite;
+}
+
+.tw-range {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  max-width: 420px;
+  font-size: 11.5px;
+}
+.tw-range__track {
+  position: relative;
+  flex: 1;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: visible;
+}
+.tw-range__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+}
+.tw-range__marker {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--text);
+  border: 2px solid var(--bg-deep, var(--bg));
+  transform: translate(-50%, -50%);
+}
+.tw-range__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* No real 52-week series to draw - flat, dimmed track so absence reads as honest. */
+.tw-range--empty .tw-range__track {
+  background: var(--surface-2);
+  opacity: 0.45;
+}
+
+.tw-quote__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.tw-quote__aside {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+.tw-quote__score-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.tw-quote__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+/* ---- Panel grid ---------------------------------------------------------- */
+
+.tw-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  align-items: start;
+  animation: fadeInUp 0.4s ease both;
+}
+.tw-panel--wide,
+.tw-panel--full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .tw-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tw-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.tw-panel__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-deep, var(--bg-elev));
+}
+.tw-panel__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.tw-panel__hint {
+  color: var(--faint);
+  font-size: 11.5px;
+}
+.tw-panel__actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.tw-panel__subhead {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  margin: var(--sp-3) 0 var(--sp-2);
+}
+.tw-panel__body {
+  padding: var(--sp-4);
+  min-width: 0;
+}
+
+/* Deep-link flash when a `?panel=` target is focused from the command bar. */
+.tw-panel--flash {
+  animation: twPanelFlash 1.6s ease;
+}
+@keyframes twPanelFlash {
+  0%,
+  100% {
+    box-shadow: var(--shadow-sm);
+  }
+  20% {
+    box-shadow: 0 0 0 2px var(--accent), var(--glow-accent);
+  }
+}
+
+.tw-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.tw-icon-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.tw-icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- Chart panel returns ------------------------------------------------- */
+
+.tw-returns {
+  display: inline-flex;
+  gap: var(--sp-3);
+}
+.tw-returns__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 12px;
+}
+.tw-returns__k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---- AI brief ------------------------------------------------------------ */
+
+.tw-brief {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.tw-brief__sentiment {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* Headline VERDICT chip - leads the brief with the debate's call (bullish /
+   bearish / mixed) + conviction, stance-colored, mirroring the Research Desk. */
+.tw-brief__verdict {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.tw-brief__verdict-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--muted);
+}
+.tw-brief__verdict-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--faint);
+}
+.tw-brief__verdict-stance {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.tw-brief__verdict-conf {
+  font-size: 12px;
+  color: var(--muted);
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+.tw-brief__verdict--bullish {
+  background: color-mix(in srgb, var(--bull) 12%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--bull) 38%, var(--border));
+}
+.tw-brief__verdict--bullish .tw-brief__verdict-dot {
+  background: var(--bull);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bull) 22%, transparent);
+}
+.tw-brief__verdict--bullish .tw-brief__verdict-stance {
+  color: var(--bull);
+}
+.tw-brief__verdict--bearish {
+  background: color-mix(in srgb, var(--bear) 12%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--bear) 38%, var(--border));
+}
+.tw-brief__verdict--bearish .tw-brief__verdict-dot {
+  background: var(--bear);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--bear) 22%, transparent);
+}
+.tw-brief__verdict--bearish .tw-brief__verdict-stance {
+  color: var(--bear);
+}
+.tw-brief__verdict--mixed .tw-brief__verdict-stance {
+  color: var(--text);
+}
+.tw-brief__summary {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 0;
+  /* Bull/Bear text and the summary can carry raw citation URLs - break long
+     unspaced tokens so they wrap instead of running off the right edge. */
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.tw-brief__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+/* Grid/flex children default to min-width:auto, which refuses to shrink below
+   their content - a long URL then overflows and gets clipped. min-width:0 lets
+   each case column shrink so its text wraps. */
+.tw-brief__cols > div {
+  min-width: 0;
+}
+@media (max-width: 560px) {
+  .tw-brief__cols {
+    grid-template-columns: 1fr;
+  }
+}
+.tw-brief__col-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--sp-2);
+}
+.tw-brief__list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.tw-brief__cites {
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-2);
+}
+.tw-brief__cta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.tw-brief__deeplink {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 9px var(--sp-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--grad-brand-soft);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+.tw-brief__deeplink:hover {
+  border-color: rgba(var(--accent-rgb), 0.5);
+  transform: translateY(-1px);
+}
+.tw-brief__deeplink svg {
+  color: var(--accent-bright);
+  flex: none;
+}
+.tw-brief__disclaimer {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* ---- AI brief - live progress (loading state) ----------------------------- */
+
+.tw-brief__loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-1) 0;
+}
+
+.tw-brief__loading-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.tw-brief__loading-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tw-brief__loading-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tw-brief__loading-dot {
+    animation: pulseGlow 2s ease infinite;
+  }
+}
+
+.tw-brief__loading-eta {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tw-brief__loading-track {
+  position: relative;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.tw-brief__loading-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--accent-2, var(--accent)), var(--accent));
+  transition: width 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw-brief__loading-fill {
+    transition: none;
+  }
+}
+
+.tw-brief__loading-sub {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--faint);
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   Compare two tickers (/terminal/:a/vs/:b) - Phase-3 multi-pane seed
+   ============================================================================ */
+
+.tw-compare {
+  display: flex;
+  flex-direction: column;
+}
+.tw-compare__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+.tw-compare__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0;
+  font-size: 22px;
+}
+.tw-compare__title .ticker {
+  font-size: 22px;
+}
+.tw-compare__vs {
+  color: var(--faint);
+}
+.tw-compare__bar .btn {
+  margin-left: auto;
+}
+
+.tw-compare__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  align-items: stretch;
+  margin-bottom: var(--sp-4);
+}
+@media (max-width: 720px) {
+  .tw-compare__cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tw-cmp-col {
+  min-height: 220px;
+}
+.tw-cmp-col__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+.tw-cmp-col__id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tw-cmp-col__ticker {
+  font-size: 24px;
+  line-height: 1.1;
+}
+.tw-cmp-col__name {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tw-cmp-col__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.tw-cmp-col__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.tw-cmp-col__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  font-size: 12px;
+}
+
+/* Head-to-head verdict table. */
+.tw-verdict__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.tw-verdict__row:last-of-type {
+  border-bottom: none;
+}
+.tw-verdict__row--head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.tw-verdict__val {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tw-verdict__val--win {
+  color: var(--accent-bright, var(--accent));
+  font-weight: 700;
+}
+.tw-verdict__note {
+  margin: var(--sp-3) 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ============================================================================
+   Linked-parameter spread (/terminal/spread) - Phase 3 multi-pane
+   ============================================================================ */
+
+.tw-spread {
+  display: flex;
+  flex-direction: column;
+}
+.tw-spread__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.tw-spread__symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+  padding: 4px 4px 4px var(--sp-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+.tw-spread__symbol input {
+  width: 200px;
+  max-width: 40vw;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.tw-spread__symbol input::placeholder {
+  color: var(--faint);
+  letter-spacing: 0;
+}
+
+.tw-spread__panels {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+.tw-spread__panels-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: var(--sp-1);
+}
+.tw-chip {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.tw-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.tw-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tw-chip--on {
+  color: var(--accent-bright, var(--accent));
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+/* Keyed wrapper that doesn't generate a box, so each panel's --wide/--full
+   span keeps working as a direct grid item. */
+.tw-spread__cell {
+  display: contents;
+}
+
+/* ---- Notes panel --------------------------------------------------------- */
+
+.tw-note {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.tw-note__area {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: var(--sp-3);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: var(--bg-deep, var(--bg));
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.tw-note__area::placeholder {
+  color: var(--faint);
+}
+.tw-note__area:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.4);
+}
+.tw-note__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+}
+.tw-note__saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--bull);
+}
+
+/* ---- Loading shell ------------------------------------------------------- */
+
+.tw-skeleton__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5);
+  margin: var(--sp-2) 0 var(--sp-4);
+  background: var(--bg-deep, var(--bg-elev));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+/* ---- Terminal-home monitors (watchlist + movers) ------------------------- */
+
+.tw-monitors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  align-items: start;
+  margin-bottom: var(--sp-5);
+}
+.tw-monitors--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1080px) {
+  .tw-monitors--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .tw-monitors,
+  .tw-monitors--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The monitor bodies are dense lists - let them scroll past a sensible height. */
+.tw-monitors .tw-panel__body {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.data-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Data rows as links into the workspace. */
+a.data-row {
+  color: var(--text);
+  text-decoration: none;
+  border-radius: var(--r-xs);
+  transition: background 0.12s ease;
+}
+a.data-row:hover {
+  background: var(--surface);
+}
+a.data-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--r-xs);
+}
+
+.tw-mover-row {
+  grid-template-columns: var(--col-w-sm) minmax(0, 1fr) var(--col-w-sm) var(--col-w-sm);
+}
+.tw-mover-row__ticker {
+  font-weight: 600;
+}
+
+.tw-wl-row {
+  grid-template-columns: auto var(--col-w-sm) minmax(0, 1fr) var(--col-w-sm) var(--col-w-sm);
+}
+.tw-wl-row__score {
+  min-width: 22px;
+  font-weight: 700;
+  text-align: center;
+}
+.tw-wl-row__ticker {
+  font-weight: 600;
+}
+
+/* Earnings-calendar rows: ticker · name · est EPS · date+countdown. */
+.tw-earn-row {
+  grid-template-columns: var(--col-w-sm) minmax(0, 1fr) var(--col-w-sm) var(--col-w-md);
+}
+.tw-earn-row__ticker {
+  font-weight: 600;
+}
+.tw-earn-row__when {
+  white-space: nowrap;
+}
+.tw-earn-row__when--soon {
+  color: var(--accent-bright, var(--accent));
+  font-weight: 700;
+}
+
+/* ---- Terminal-home sticky control deck + wire density -------------------- */
+
+/* The filter chips + source-status strip pin to the top of the scroll pane so
+   context never leaves the viewport while the wire scrolls beneath them. */
+/* Only the filter/density ROW pins now; the glance-once source-status chips scroll away. */
+.tw-wire-controls {
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-4);
+}
+
+.tw-source-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.tw-wire-controls__row {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  /* Opaque so the wire scrolls cleanly BEHIND it, plus a soft drop shadow + border
+     so the pinned row reads as a header, never an overlapping ghost. Negative
+     margin + padding keep the hit area flush while the bg covers the column width. */
+  padding: var(--sp-3) var(--sp-2);
+  margin: 0 calc(-1 * var(--sp-2));
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 10px 16px -12px rgba(0, 0, 0, 0.6);
+}
+.tw-wire-controls__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+/* "New since last visit" marker - accent, distinct from severity pills. */
+.pill--new {
+  color: var(--accent-bright, var(--accent));
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.alert-card--new {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+
+/* Compact density - tighten the wire to a terminal tape. The verbose blurb and
+   action row collapse; the ticker in the meta line still opens the workspace. */
+.alert-list--compact {
+  gap: var(--sp-2);
+}
+.alert-list--compact .alert-card {
+  padding: 9px 12px;
+  border-radius: var(--r);
+}
+.alert-list--compact .alert-card__head {
+  margin-bottom: 4px;
+}
+.alert-list--compact .alert-card__title {
+  font-size: 13.5px;
+  margin-bottom: 3px;
+}
+.alert-list--compact .alert-card__blurb {
+  display: none;
+}
+.alert-list--compact .alert-card__meta {
+  font-size: 12px;
+}
+.alert-list--compact .alert-card__actions {
+  display: none;
+}
+
+/* Panel-header tab toggle (movers lanes). */
+.tw-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.tw-tab {
+  padding: 3px 9px;
+  border: none;
+  border-radius: var(--r-xs);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.tw-tab:hover {
+  color: var(--text);
+}
+.tw-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tw-tab--on {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* ============================================================================
+   Phone + touch pass - Phase-3 routes at small widths (spread · compare · home)
+   ============================================================================ */
+
+@media (max-width: 560px) {
+  /* /terminal/spread - the symbol box should own its own full-width row instead
+     of being shoved right by margin-left:auto and clipped to 40vw. */
+  .tw-spread__bar {
+    gap: var(--sp-2);
+  }
+  .tw-spread__symbol {
+    margin-left: 0;
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .tw-spread__symbol input {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  /* /terminal/:a/vs/:b - the 2-col grid already collapses ≤720px; here just keep
+     the header + verdict table legible on a ~360px screen. */
+  .tw-compare__bar {
+    gap: var(--sp-2) var(--sp-3);
+  }
+  .tw-compare__bar .btn {
+    margin-left: 0; /* don't strand the swap button on a lonely right edge */
+  }
+  .tw-compare__title,
+  .tw-compare__title .ticker {
+    font-size: 18px; /* 22 → 18 so "AAPL vs NVDA" stays on one line */
+  }
+  .tw-verdict__row {
+    gap: var(--sp-2);
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+
+  /* /terminal home - the sticky deck's 720px cap is moot in a phone column, and
+     the stacked single-column monitors can run a little taller. */
+  .tw-wire-controls {
+    max-width: none;
+  }
+  .tw-monitors .tw-panel__body {
+    max-height: 360px;
+  }
+}
+
+/* Grow the dense controls to a comfortable tap target on touch devices (any
+   width) OR at phone widths. Scoped to the Terminal's own tw-* controls so the
+   desktop pointer UI and the rest of the app are untouched. */
+@media (pointer: coarse), (max-width: 560px) {
+  .tw-chip {
+    padding: 8px 14px; /* ~36px tall - comfortably tappable */
+  }
+  .tw-tab {
+    padding: 7px 12px;
+    font-size: 12.5px;
+  }
+  .tw-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* ---- Terminal error-boundary fallback ------------------------------------ */
+/* Shown when a Terminal route throws (the old white-screen). Reuses the shared
+   .empty / .feed-state chassis; these just lay out the recovery actions and the
+   dev-only error detail so a crash reads as a calm, on-brand retry card. */
+.tw-crash__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: center;
+  margin-top: var(--sp-3);
+}
+
+.tw-crash__detail {
+  margin: var(--sp-3) 0 0;
+  max-width: 100%;
+  max-height: 160px;
+  overflow: auto;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---- Insider trade rows (SecFilingsPanel per-transaction detail) ----------- */
+/* Bloomberg-style rows: dot · Name · Role · bought/sold · shares (~$val) · date · ↗ */
+
+.insider-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 8px;
+}
+
+.insider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 11.5px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+
+.insider-row:hover {
+  border-color: rgba(var(--accent-2-rgb), 0.35);
+  background: var(--surface-2);
+}
+
+.insider-row__dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.insider-row__dot--buy  { background: var(--bull); }
+.insider-row__dot--sell { background: var(--bear); }
+
+.insider-row__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 120px;
+}
+
+.insider-row__name {
+  font-weight: 600;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.insider-row__role {
+  font-size: 10.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.insider-row__action {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.insider-row__detail {
+  flex: 1 1 80px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.insider-row__date {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.insider-row__ext {
+  flex-shrink: 0;
+  opacity: 0.5;
+}

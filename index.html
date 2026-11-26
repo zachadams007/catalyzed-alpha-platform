@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <title>Catalyzed Alpha</title>
+    <!-- PWA / mobile home-screen install -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#080b10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Catalyzed Alpha" />
+    <link rel="icon" type="image/png" href="/pwa-192.png" />
+    <link rel="apple-touch-icon" href="/pwa-256.png" />
+    <!-- Elfsight AI Chatbot platform (the floating support assistant). Loaded only
+         OUTSIDE the Tauri desktop shell: in the WebView2 desktop app the external
+         script + its shadow-DOM observer can stall the boot data fetch (app fails
+         closed → "API access off"). __TAURI_INTERNALS__ is injected before page
+         scripts, so this check is reliable at parse time. Web/mobile load it normally. -->
+    <script>
+      if (!("__TAURI_INTERNALS__" in window || "__TAURI__" in window)) {
+        var s = document.createElement("script");
+        s.src = "https://elfsightcdn.com/platform.js";
+        s.async = true;
+        document.head.appendChild(s);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="overlay-root"></div>
+    <!-- Elfsight AI Chatbot mount. platform.js finds this anchor and floats the
+         widget app-wide; kept out of #root so it survives client-side navigation. -->
+    <div
+      class="elfsight-app-00000000-0000-0000-0000-000000000000"
+      data-elfsight-app-lazy
+    ></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

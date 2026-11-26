@@ -1,0 +1,270 @@
+/* Reset + base element styling + shared utilities. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* iOS standalone full-screen (the recurring iPhone black-strip bug). The UA paints
+   the area BELOW the document with the dark default canvas (black), so the moment
+   the document is even a hair shorter than the screen - which `100dvh` causes,
+   because it under-reports in a standalone home-screen PWA - a black strip shows
+   under the app. Pinning the root to `min-height: 100%` (the initial containing
+   block = the FULL physical screen in standalone, reliably, unlike dvh) guarantees
+   the brand-dark <html> box covers the whole screen so no black canvas can peek
+   through. The mobile shell (components.css) is `position: fixed; inset: 0` so it
+   fills that same full screen and absorbs the safe-area insets itself. */
+html {
+  background-color: var(--bg);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 600px at 12% -10%, rgba(var(--accent-rgb), 0.14), transparent 60%),
+    radial-gradient(820px 560px at 100% 0%, rgba(var(--accent-2-rgb), 0.1), transparent 55%),
+    radial-gradient(700px 700px at 50% 120%, rgba(var(--accent-3-rgb), 0.06), transparent 60%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.45;
+  overflow: hidden; /* the app shell scrolls its own panes */
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* ---- Premium text-input baseline (app-wide) -----------------------------
+   Every text box should read as a soft, rounded, elevated surface that fits
+   the card theme - never a sharp black rectangle. Component classes can still
+   override; this is the floor so un-styled inputs (group forms, call ledger,
+   chat, etc.) look intentional everywhere. */
+input:not([type]),
+input[type="text"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="tel"],
+textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  padding: 11px 13px;
+  font-size: 14px;
+  line-height: 1.4;
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+input:not([type]):hover,
+input[type="text"]:hover,
+input[type="search"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="number"]:hover,
+input[type="url"]:hover,
+input[type="tel"]:hover,
+textarea:hover {
+  border-color: var(--border-strong);
+}
+input:not([type]):focus,
+input[type="text"]:focus,
+input[type="search"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="url"]:focus,
+input[type="tel"]:focus,
+textarea:focus {
+  border-color: var(--accent);
+  background: var(--surface-3, var(--surface-2));
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.16);
+}
+input::placeholder,
+textarea::placeholder {
+  color: var(--faint);
+  opacity: 1;
+}
+
+::selection {
+  background: rgba(var(--accent-rgb), 0.35);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+  background-clip: content-box;
+}
+
+/* Numeric / ticker text */
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+}
+
+.text-muted {
+  color: var(--muted);
+}
+.text-faint {
+  color: var(--faint);
+}
+.text-bull {
+  color: var(--bull);
+}
+.text-bear {
+  color: var(--bear);
+}
+.gradient-text {
+  background: var(--grad-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Layout helpers */
+.row {
+  display: flex;
+  align-items: center;
+}
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+}
+.gap-1 {
+  gap: var(--sp-1);
+}
+.gap-2 {
+  gap: var(--sp-2);
+}
+.gap-3 {
+  gap: var(--sp-3);
+}
+.gap-4 {
+  gap: var(--sp-4);
+}
+.wrap {
+  flex-wrap: wrap;
+}
+.grow {
+  flex: 1;
+}
+
+/* Prevent horizontal page scroll on narrow viewports; panes manage their own overflow. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  /* Lock the viewport on iOS/PWA: kill rubber-band overscroll in BOTH axes so a
+     swipe-up can't drag the page off-screen and reveal a black strip, and stop
+     iOS from auto-inflating text on rotate. (maximum-scale/user-scalable in the
+     viewport meta block pinch-zoom; this handles the scroll-bounce half.) */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (max-width: 759px) {
+  .row-between {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--sp-3);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

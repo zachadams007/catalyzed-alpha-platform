@@ -1,0 +1,663 @@
+/* ============================================================================
+   Company-Report surfaces - Signal Snowflake, Why-Tags, Risks & Rewards,
+   valuation chip + report stats. Shared by SignalCard (feed) and StockDetail.
+
+   Rules of the house (docs/design-system.md):
+   • Token-only - colors from tokens.css, spacing from --sp-*, motion from
+     --motion-* / --ease-*. The only literal is #8aa8e8 (the established
+     cobalt-text accent already used for .pill--cap / hype "news").
+   • Every motion has a prefers-reduced-motion fallback.
+   • Numbers use .mono. Green stays reserved for --bull (gain) only.
+   ========================================================================== */
+
+/* ---- Signal Snowflake (multi-axis radar) --------------------------------- */
+.snowflake {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.snowflake--card {
+  container-type: inline-size;
+  width: 100%;
+}
+.snowflake__chart {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+.snowflake--card .snowflake__chart {
+  width: clamp(110px, 42cqi, 150px);
+  margin: 0 auto;
+}
+.snowflake--detail .snowflake__chart {
+  width: min(300px, 100%);
+  margin: 0 auto;
+}
+.snowflake__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Static grid */
+.snowflake__ring {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.snowflake__spoke {
+  stroke: var(--border);
+  stroke-width: 1;
+  transition:
+    stroke var(--motion-base) var(--ease-out),
+    stroke-width var(--motion-base) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+.snowflake__spoke.is-active {
+  stroke: rgba(var(--accent-bright-rgb), 0.85);
+  stroke-width: 2;
+}
+.snowflake__spoke.is-dim {
+  opacity: 0.28;
+}
+
+/* Data crystal - blooms from the hub on mount. */
+.snowflake__data {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .snowflake__data {
+    animation: snowflakeBloom 0.72s var(--ease-out) both;
+  }
+}
+@keyframes snowflakeBloom {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.snowflake__poly {
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition: opacity var(--motion-base) var(--ease-out);
+}
+.snowflake--card .snowflake__poly {
+  stroke-width: 1.6;
+}
+.snowflake__poly.is-dim {
+  opacity: 0.55;
+}
+.snowflake__dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform var(--motion-base) cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity var(--motion-base) var(--ease-out);
+}
+.snowflake__dot.is-active {
+  transform: scale(1.55);
+}
+.snowflake__dot.is-dim {
+  opacity: 0.34;
+}
+
+/* Perimeter labels (both variants): metric name (caption) + value (hero). */
+.snowflake__label {
+  font-family: var(--font-display);
+  cursor: default;
+  transition:
+    opacity var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
+}
+.snowflake__label.is-dim {
+  opacity: 0.32;
+}
+.snowflake__label-name {
+  fill: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: fill var(--motion-base) var(--ease-out);
+}
+.snowflake__label-val {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: fill var(--motion-base) var(--ease-out);
+}
+.snowflake--card .snowflake__label-name {
+  font-size: 13px;
+}
+.snowflake--card .snowflake__label-val {
+  font-size: 14px;
+}
+.snowflake__label.is-active .snowflake__label-name {
+  fill: var(--text);
+  font-weight: 600;
+}
+.snowflake__label.is-active .snowflake__label-val {
+  fill: var(--text);
+}
+
+/* Numbered rim pins + legend (legend mode: N >= 7 or long names). */
+.snowflake__pin {
+  transition: opacity var(--motion-base) var(--ease-out);
+}
+.snowflake__pin.is-dim {
+  opacity: 0.34;
+}
+.snowflake__pin-bg {
+  fill: var(--bg-deep);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  transition:
+    fill var(--motion-base) var(--ease-out),
+    stroke var(--motion-base) var(--ease-out);
+}
+.snowflake__pin.is-active .snowflake__pin-bg {
+  fill: rgba(var(--accent-rgb), 0.18);
+  stroke: rgba(var(--accent-bright-rgb), 0.8);
+}
+.snowflake__pin-num {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  transition: fill var(--motion-base) var(--ease-out);
+}
+.snowflake--card .snowflake__pin-num {
+  font-size: 9px;
+}
+.snowflake__pin.is-active .snowflake__pin-num {
+  fill: var(--text);
+}
+.snowflake__legend {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  width: 100%;
+  max-width: 280px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 14px;
+}
+/* Card legend = the primary label surface. Two columns of FULL axis names with
+   the value pinned right; auto-fit keeps it 2-col wherever there's room and
+   gracefully drops to 1-col on a very narrow card - never truncating mid-word.
+   `auto` name track + right-pinned value means labels size to their content. */
+.snowflake--card .snowflake__legend {
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 1px 14px;
+  max-width: 100%;
+  align-self: stretch;
+}
+.snowflake--card .snowflake__legend-name {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.snowflake__legend-row {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: var(--r-xs);
+  cursor: default;
+  transition:
+    background var(--motion-base) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+.snowflake__legend-row.is-active {
+  background: rgba(var(--accent-rgb), 0.1);
+}
+.snowflake__legend-row.is-dim {
+  opacity: 0.4;
+}
+/* Keyboard focus on the legend (its rows are the interactive surface in legend
+   mode) - a clear, on-brand ring without disturbing the row grid. */
+.snowflake__legend-row {
+  outline: none;
+}
+.snowflake__legend-row:focus-visible {
+  background: rgba(var(--accent-rgb), 0.1);
+  box-shadow: inset 0 0 0 1px rgba(var(--accent-bright-rgb), 0.55);
+}
+.snowflake__legend-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--faint);
+  text-align: center;
+}
+.snowflake__legend-name {
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.snowflake__legend-row.is-active .snowflake__legend-name {
+  color: var(--text);
+}
+.snowflake__legend-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Interaction layer - transparent angular sectors (whole disc, tiled). */
+.snowflake__wedge {
+  fill: transparent;
+  pointer-events: all;
+  cursor: pointer;
+  outline: none;
+}
+.snowflake__wedge:focus-visible {
+  fill: rgba(var(--accent-bright-rgb), 0.07);
+  stroke: rgba(var(--accent-bright-rgb), 0.55);
+  stroke-width: 1;
+}
+/* Visual layers never receive pointer events - only wedges do. This removes
+   the hover-target-swap jitter entirely (no dead gaps, no center overlap). */
+.snowflake__grid,
+.snowflake__data,
+.snowflake__labels,
+.snowflake__pins {
+  pointer-events: none;
+}
+
+/* Reduced motion - keep the opacity/color change, drop transforms + glow. */
+@media (prefers-reduced-motion: reduce) {
+  .snowflake__dot.is-active {
+    transform: none;
+  }
+  .snowflake__dot.is-active,
+  .snowflake__label.is-active {
+    filter: none !important;
+  }
+}
+
+/* Readout - reserved space below the chart, updates on hover/focus. */
+.snowflake__readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.snowflake--detail .snowflake__readout {
+  min-height: 34px;
+  max-width: 320px;
+}
+.snowflake__readout-cat {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.snowflake__readout-exp {
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.snowflake--card .snowflake__readout-exp {
+  -webkit-line-clamp: 1;
+}
+.snowflake__readout-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.snowflake__readout-pair > span:last-child {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.snowflake__readout-k {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--faint);
+}
+.snowflake__readout-sep {
+  color: var(--faint);
+}
+
+/* ---- Why-this-is-interesting tags ---------------------------------------- */
+.why-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--sp-3);
+}
+.why-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+.why-tag:hover {
+  transform: translateY(-1px);
+}
+.why-tag__icon {
+  display: inline-flex;
+}
+.why-tag--fresh_catalyst {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+.why-tag--insider_buying {
+  color: var(--bull);
+  background: rgba(var(--bull-rgb), 0.1);
+  border-color: rgba(var(--bull-rgb), 0.3);
+}
+.why-tag--smart_money {
+  color: var(--viz-violet);
+  background: rgba(var(--viz-violet-rgb), 0.12);
+  border-color: rgba(var(--viz-violet-rgb), 0.32);
+}
+.why-tag--discounted_earnings {
+  color: #8aa8e8;
+  background: rgba(var(--accent-2-rgb), 0.12);
+  border-color: rgba(var(--accent-2-rgb), 0.34);
+}
+.why-tag--overlooked_small_cap {
+  color: #aeb9d6;
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+.why-tag--sell_watch {
+  color: var(--bear);
+  background: rgba(var(--bear-rgb), 0.1);
+  border-color: rgba(var(--bear-rgb), 0.32);
+}
+.why-tag--high_conviction {
+  color: var(--accent-bright);
+  background: rgba(var(--accent-bright-rgb), 0.1);
+  border-color: rgba(var(--accent-bright-rgb), 0.3);
+}
+/* v2 leading-signal chips - the early inflection / pipeline / sentiment-shift. */
+.why-tag--reaccelerating {
+  color: var(--bull);
+  background: rgba(var(--bull-rgb), 0.12);
+  border-color: rgba(var(--bull-rgb), 0.34);
+}
+.why-tag--backlog_building {
+  color: var(--bull);
+  background: rgba(var(--bull-rgb), 0.1);
+  border-color: rgba(var(--bull-rgb), 0.28);
+}
+.why-tag--sentiment_turning {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+.why-tag--on_fire {
+  color: var(--accent-3);
+  background: linear-gradient(
+    120deg,
+    rgba(var(--bear-rgb), 0.16),
+    rgba(var(--accent-3-rgb), 0.12)
+  );
+  border-color: rgba(var(--accent-3-rgb), 0.42);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .why-tag--on_fire {
+    animation: whyEmber 2.6s ease-in-out infinite;
+  }
+}
+@keyframes whyEmber {
+  0%,
+  100% {
+    box-shadow: 0 0 10px -4px rgba(var(--accent-3-rgb), 0.5);
+  }
+  50% {
+    box-shadow: 0 0 14px -2px rgba(var(--bear-rgb), 0.5);
+  }
+}
+
+/* ---- Risks & Rewards ----------------------------------------------------- */
+.rr {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+.rr--card {
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
+}
+@container (min-width: 440px) {
+  .rr--card {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.rr__col {
+  min-width: 0;
+}
+.rr__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.rr__col--rewards .rr__head {
+  color: var(--bull);
+}
+.rr__col--risks .rr__head {
+  color: var(--warn);
+}
+.rr__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.rr__item {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  line-height: 1.42;
+  color: var(--text);
+}
+.rr--card .rr__item {
+  font-size: 12px;
+}
+.rr__bullet {
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: inline-flex;
+}
+.rr__item--positive .rr__bullet {
+  color: var(--bull);
+}
+.rr__item--neutral .rr__bullet {
+  color: var(--muted);
+}
+.rr__item--warn .rr__bullet {
+  color: var(--warn);
+}
+.rr__item--negative .rr__bullet {
+  color: var(--bear);
+}
+.rr__text {
+  min-width: 0;
+}
+
+/* ---- Valuation chip + report stats (card / hero) ------------------------- */
+.val-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.val-chip__icon {
+  opacity: 0.9;
+}
+.val-chip__score {
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.val-chip--positive {
+  color: var(--bull);
+  background: rgba(var(--bull-rgb), 0.1);
+  border-color: rgba(var(--bull-rgb), 0.28);
+}
+.val-chip--neutral {
+  color: #8aa8e8;
+  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.24);
+}
+.val-chip--warn {
+  color: var(--warn);
+  background: rgba(var(--warn-rgb), 0.1);
+  border-color: rgba(var(--warn-rgb), 0.26);
+}
+.val-chip--negative {
+  color: var(--bear);
+  background: rgba(var(--bear-rgb), 0.1);
+  border-color: rgba(var(--bear-rgb), 0.28);
+}
+
+.report-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.report-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.report-stat__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--faint);
+}
+.report-stat__value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ---- Card report module (snowflake + risks/rewards) ---------------------
+   Layout intent: the signal shape (chart + numbered legend) is a self-contained
+   block on the left; Rewards / Watch-outs fill the remaining width with no dead
+   gap. A container query - not a viewport one - drives the split so the module
+   reflows correctly whether the card is in a 1-col feed or a 2-col grid.        */
+.report-row {
+  container-type: inline-size;
+  display: grid;
+  /* Intrinsic, self-responsive split: two ~230px tracks side by side wherever
+     they fit, automatically collapsing to a single stacked column on a narrow
+     card - no viewport/self-container query needed (a rule can't query its own
+     element). The min() lets a track shrink to the full row width when stacked. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: var(--sp-4) var(--sp-5);
+  align-items: start;
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--r-md);
+  background: rgba(var(--bg-deep-rgb), 0.5);
+  border: 1px solid var(--border);
+}
+.report-row__viz {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.report-row__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--faint);
+}
+
+/* ---- Detail company-report block (two cards side by side) ---------------- */
+.company-report {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) 1.05fr;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-5);
+  align-items: stretch;
+}
+.company-report .signal-card {
+  display: flex;
+  flex-direction: column;
+}
+.company-report__viz .snowflake {
+  flex: 1;
+  justify-content: center;
+  margin-top: var(--sp-2);
+}
+@media (max-width: 860px) {
+  .company-report {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Mobile: Rewards / Watch-outs never clip on a narrow screen ----------
+   On a phone the Today/feed card's report-row (Snowflake + Rewards/Watch-outs)
+   is only ~290px wide, which squeezes the two-up Rewards|Watch-outs columns
+   until the text clips. Stack the report-row so the Snowflake sits above a
+   FULL-WIDTH Rewards/Watch-outs block, and force every rr variant to a single
+   column so each item gets the whole row. Mirrors the prompt: "stack to one
+   column" on narrow screens. */
+@media (max-width: 559px) {
+  .report-row {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    align-items: stretch;
+  }
+  .report-row__viz {
+    align-items: flex-start;
+  }
+  .rr,
+  .rr--card,
+  .rr--detail {
+    grid-template-columns: 1fr;
+  }
+}

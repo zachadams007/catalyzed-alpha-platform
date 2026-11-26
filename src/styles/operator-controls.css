@@ -1,0 +1,143 @@
+/* Operator score-spread / quality-cap dial controls.
+   Imported from main.tsx (global); uses only design-system tokens. */
+
+/* ── Slider row ─────────────────────────────────────────────────────────── */
+
+.dial-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+}
+
+.dial-row + .dial-row {
+  border-top: 1px solid var(--border);
+}
+
+.dial-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.dial-row__label {
+  font-weight: 600;
+  font-size: var(--type-body);
+  color: var(--text);
+}
+
+.dial-row__value {
+  font-family: var(--font-mono);
+  font-size: var(--type-sm);
+  font-weight: 600;
+  color: var(--accent-bright);
+  min-width: 40px;
+  text-align: right;
+}
+
+.dial-row__hint {
+  color: var(--muted);
+  font-size: var(--type-sm);
+  line-height: 1.55;
+  max-width: 420px;
+}
+
+/* Slider track + thumb - matches the azure accent language of the ops panel. */
+.dial-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    to right,
+    var(--accent) 0%,
+    var(--accent) var(--fill, 30%),
+    rgba(var(--accent-rgb), 0.15) var(--fill, 30%),
+    rgba(var(--accent-rgb), 0.15) 100%
+  );
+  outline: none;
+  cursor: pointer;
+  margin: var(--sp-2) 0;
+  transition: background var(--motion-fast) var(--ease-out);
+}
+
+.dial-slider:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--r-pill);
+}
+
+.dial-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.4), var(--shadow-sm);
+  cursor: pointer;
+  transition: box-shadow var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.dial-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.3), var(--shadow-sm);
+  transform: scale(1.1);
+}
+
+.dial-slider::-webkit-slider-thumb:active {
+  transform: scale(0.96);
+}
+
+.dial-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.4);
+  cursor: pointer;
+}
+
+/* Reset-to-default link - subtle, inline, right-aligned */
+.dial-row__reset {
+  align-self: flex-end;
+  font-size: var(--type-xs);
+  color: var(--faint);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.dial-row__reset:hover {
+  color: var(--muted);
+}
+
+.dial-row__reset:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Saved confirmation pill - mirrors .budget-row__save.is-saved */
+.dial-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--type-xs);
+  font-weight: 600;
+  color: var(--bull);
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.dial-saved.is-visible {
+  opacity: 1;
+}

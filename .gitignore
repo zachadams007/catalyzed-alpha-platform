@@ -1,0 +1,73 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# build output
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+
+# tauri / rust
+src-tauri/target
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env
+.env
+.env.local
+.env.*.local
+
+# terminal wire writer: server-only secrets (service-role key) + run logs.
+# NEVER commit these - the service-role key bypasses RLS.
+scripts/terminal_miner/.writer.env
+scripts/terminal_miner/*.log
+
+# daily broad-universe scan: server-only secrets (service-role + current vendor
+# keys) + run logs. NEVER commit - the service-role key bypasses RLS.
+scripts/universe_scan/.scan.env
+*.scan.env
+scripts/universe_scan/*.log
+scripts/universe_scan/last-scan.json
+scripts/universe_scan/last-attempt.json
+scripts/universe_scan/learning-archive/
+
+# supabase local CLI artifacts (ephemeral; not safe-to-track noise)
+supabase/.temp/
+
+# codegraph daemon (ephemeral local process state)
+.codegraph/daemon.pid
+
+# claude-flow / swarm local memory
+.swarm/
+
+# local verification screenshots
+scripts/*.png
+
+# scratch
+/a
+
+# python (miner/writer bytecode)
+__pycache__/
+*.pyc
+
+# editor / os
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# verification artifacts
+scripts/verify-*.png
+scripts/__verify/
+
+.vercel
+
+# Local Claude Code session settings - carries local tool keys; never commit.
+.claude/settings.local.json

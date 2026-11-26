@@ -1,0 +1,93 @@
+/* ── Avatar photo upload styles ─────────────────────────────────────────────
+   All sizing relies on the existing .avatar box rules (components.css).
+   We only add: photo display, camera overlay button, and remove control.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Wrapper that positions the camera button relative to the avatar circle */
+.avatar-wrap {
+  position: relative;
+  display: inline-grid;
+  flex-shrink: 0;
+  /* The .avatar class is also applied, so we inherit its width/height/radius */
+}
+
+/* The <img> that replaces initials when a photo exists */
+.avatar-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* The camera icon button overlapping the bottom-right of the avatar.
+   Hidden by default; visible on hover of the wrap or when focused. */
+.avatar-camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translate(28%, 28%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-elev);
+  background: var(--accent);
+  color: #06121d;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  z-index: 1;
+}
+
+/* Show camera button on wrap hover or keyboard focus-within */
+.avatar-wrap:hover .avatar-camera-btn,
+.avatar-wrap:focus-within .avatar-camera-btn {
+  opacity: 1;
+}
+
+.avatar-camera-btn:hover {
+  background: var(--accent-2);
+}
+
+.avatar-camera-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+/* Hidden native file input - triggered by the camera button */
+.avatar-file-input {
+  display: none;
+}
+
+/* ── Remove photo control ────────────────────────────────────────────────── */
+
+/* Sits inside the compact account-chip dropdown menu */
+.avatar-remove-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: 12px;
+  color: var(--bear);
+  cursor: pointer;
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.avatar-remove-btn:hover {
+  background: rgba(var(--bear-rgb), 0.08);
+  color: var(--text);
+}
+
+/* Let the camera button escape the overflow of the avatar circle */
+.avatar-wrap.account-chip__compact-avatar {
+  overflow: visible;
+}
