@@ -1,0 +1,7 @@
+# The default rules read the model name in a setup example as an API key.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "model name in a documentation example"
+regexes = ['''llama-3\.3-70b-versatile''']
