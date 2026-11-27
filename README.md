@@ -1,6 +1,6 @@
 # Catalyzed Alpha
 
-Equity research and discovery platform. One TypeScript codebase builds a web app and a desktop app on Tauri, a Rust desktop framework. Every morning, a scheduled job takes about 21,000 US listings, filters them to about 500, scores each on 13 dimensions and ranks them against each other with a deterministic engine. Language models collect evidence and write the research. The engine computes every score.
+Equity research platform with built-in AI. One TypeScript codebase builds a web app and a desktop app on Tauri, a Rust desktop framework. Every morning, a scheduled job takes about 21,000 US listings, filters them to about 500, scores each on 13 dimensions and ranks them against each other with a deterministic engine. Language models collect evidence and write the research. The engine computes every score.
 
 Live at [catalyzed-alpha.vercel.app](https://catalyzed-alpha.vercel.app).
 
